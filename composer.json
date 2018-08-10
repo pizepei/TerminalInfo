@@ -1,5 +1,25 @@
 {
     "name": "pizepei/terminal-info",
-    "version": "0.0.1"
+    "description": "terminal-info",
+    "keywords": ["terminal message","web","browser"],
+    "homepage": "https://org.heil.top/",
+    "authors": [
+        {
+            "name": "pizepei",
+            "email": "pizepei@pizepei.com"
+        }
+    ],
+
+    "require": {
+        "php": ">=5.6.0",
+        "pizepei/config-ng": "dev-master",
+        "pizepei/func": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "pizepei\\terminalInfo\\": "src/"
+        }
+
+    }
 
 }
