@@ -3,9 +3,9 @@
  * @Author: pizepei
  * @Date:   2018-02-10 22:57:52
  * @Last Modified by:   pizepei
- * @Last Modified time: 2018-03-24 22:30:04
+ * @Last Modified time: 2018-08-10 11:48:05
  */
-namespace terminal;
+namespace pizepei\terminalInfo\;
 /**
  * 访问客户端信息
  */
@@ -692,8 +692,3 @@ class TerminalInfo{
     } 
 
 }
-
-echo '<pre>';
-var_dump(TerminalInfo::getArowserPro());
-
-echo '</pre>';
