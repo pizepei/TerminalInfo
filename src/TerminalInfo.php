@@ -3,9 +3,9 @@
  * @Author: pizepei
  * @Date:   2018-02-10 22:57:52
  * @Last Modified by:   pizepei
- * @Last Modified time: 2018-08-10 11:48:05
+ * @Last Modified time: 2018-08-10 15:28:46
  */
-namespace pizepei\terminalInfo\;
+namespace pizepei\terminalInfo;
 /**
  * 访问客户端信息
  */
