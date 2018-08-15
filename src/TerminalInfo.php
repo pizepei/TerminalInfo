@@ -17,6 +17,14 @@ class TerminalInfo{
      * @var array
      */
     protected static $pattern = 'precision';
+
+    /**
+     * true 单例模式
+     * @var string
+     */
+    protected static $singleton = true;
+
+
     //浏览器类型
     public static  $AgentInfoBrower = array(  
                 'MSIE' => 1,  
@@ -132,7 +140,7 @@ class TerminalInfo{
         /**
          * 判断是否获取过
          */
-        if(static::$ArowserInfo){
+        if(static::$ArowserInfo && static::$singleton){
             return static::$ArowserInfo;
         }
 
@@ -173,7 +181,7 @@ class TerminalInfo{
         /**
          * 判断是否获取过
          */
-        if(static::$ArowserPro){
+        if(static::$ArowserPro && static::$singleton){
             return static::$ArowserPro;
         }
         $arr['Ipanel'] =self::getAgentInfo(self::getAgentInfo());//获取浏览器内核
