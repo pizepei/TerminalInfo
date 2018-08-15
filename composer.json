@@ -9,7 +9,6 @@
             "email": "pizepei@pizepei.com"
         }
     ],
-
     "require": {
         "php": ">=7.0.0",
         "pizepei/config-ng": "dev-master",

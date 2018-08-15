@@ -6,10 +6,17 @@
  * @Last Modified time: 2018-08-10 15:28:46
  */
 namespace pizepei\terminalInfo;
+use pizepei\terminalInfo\ToLocation;
+use pizepei\config\Config;
 /**
  * 访问客户端信息
  */
 class TerminalInfo{
+    /**
+     * 模式  high[高性能只使用本地qqwry.dat数据]  precision[高精度 使用qqwry.dat+百度接口 可匹配出是否是手机网络 在手机网络下可匹配到城市] mixture[precision + mysql数据库 如果mysql中没有数据 使用precision获取数据 插入mysq中 ，如果mysql有数据匹配 不同就更新覆盖]
+     * @var array
+     */
+    protected static $pattern = 'precision';
     //浏览器类型
     public static  $AgentInfoBrower = array(  
                 'MSIE' => 1,  
@@ -73,14 +80,12 @@ class TerminalInfo{
             'offline'=> 28,  
             'Android' => 29, 
             'iPhone' => 30,
-
         ];
-
     //操作系统
     public static  $IpInfoArr =['192.168.1.1','127.0.0.1','0.0.0.0'];
     //  百度地图api接口 配置
     //  申请地址http://lbsyun.baidu.com/
-    public static  $BdApiKey ='';
+    public static  $BdApiKey = NULL;
 
     const unknown_os   = 0 ;//未知
     const Windows_95 = 1;
@@ -112,13 +117,24 @@ class TerminalInfo{
     const webzip = 27;  
     const offline = 28; 
     const Android = 29;  
-    const iPhone = 30;  
+    const iPhone = 30;
+    /**
+     * 获取浏览数据
+     * @var array
+     */
+    public static $ArowserInfo = [];
     /**
      * [getArowserInfo 获取浏览数据]
      * @Effect
      * @return [type] [description]
      */
     public static function  getArowserInfo($type = 'arr'){
+        /**
+         * 判断是否获取过
+         */
+        if(static::$ArowserInfo){
+            return static::$ArowserInfo;
+        }
 
         $arr['Ipanel'] =self::getAgentInfo();//获取浏览器内核
 
@@ -126,8 +142,7 @@ class TerminalInfo{
 
         $arr['Os'] = self::get_os();//获取操作系统
 
-
-        $arr['IpInfo'] = self::getIp();//时时ip信息
+        $arr['IpInfo'] = self::getIpInfo();//时时ip信息
 
         if($arr['Os'] == 29){
             $arr['Build'] = self::getBuild();//获取安卓手机型号
@@ -139,9 +154,15 @@ class TerminalInfo{
 
         }
         //判断返回格式
-        return $arr =  $type == 'arr'?$arr:json_encode($arr);
+        return static::$ArowserInfo = $type == 'arr'?$arr:json_encode($arr);
 
     }
+
+    /**
+     * 完整的中文数据
+     * @var array
+     */
+    public static $ArowserPro = [];
     /**
      * [getArowserPro 获取完整的中文数据]
      * @Effect
@@ -149,7 +170,12 @@ class TerminalInfo{
      * @return [type]       [description]
      */
     public static function  getArowserPro($type = 'arr'){
-
+        /**
+         * 判断是否获取过
+         */
+        if(static::$ArowserPro){
+            return static::$ArowserPro;
+        }
         $arr['Ipanel'] =self::getAgentInfo(self::getAgentInfo());//获取浏览器内核
 
         $arr['language'] = self::get_lang();//获取浏览器语言
@@ -191,7 +217,7 @@ class TerminalInfo{
             $arr['NetType'] = 'Ethernet';
         }
         //判断返回格式
-        return $arr =  $type == 'arr'?$arr:json_encode($arr);
+        return static::$ArowserPro = $type == 'arr'?$arr:json_encode($arr);
     }
 
     /**
@@ -434,7 +460,7 @@ class TerminalInfo{
         return $arrt[1];
     }
     /**
-     * [getIpInfo 分销获取ip数据]
+     * [getIpInfo 分析获取ip数据]
      * @Effect
      * @param  string $value [description]
      * @return [type]        [description]
@@ -444,106 +470,110 @@ class TerminalInfo{
         if(empty($value)){
             $value = self::get_ip();
             if(in_array($value,self::$IpInfoArr)){
-
                 return $value;
             }
         }
+        if(static::$pattern =='high'){
 
-        $isp['isp'] = NULL;
-        //越前面权重越高
-        if($BdIp = self::getBdIp($value)){ $arr['BdIp']= $BdIp;};
-        if($TbIp = self::getTbIp($value)){ $arr['TbIp']= $TbIp; $isp['isp'] =$TbIp['isp']; };
-        if($XlIp = self::getXlIp($value)){ $arr['XlIp']= $XlIp;};
+            return static::getIpInfoHigh($value);
 
-        //首先判断国家
-        //优先淘宝接口
-        if($TbIp['country'] != '中国' && $TbIp['country'] != NULL && $TbIp['country'] != 'XX'){
-            return ['certain'=>$TbIp,'all'=>$arr];
-        }
-        //之后新浪接口
-        if($XlIp['country'] != '中国' ){
-            return ['certain'=>array_merge_recursive($XlIp,$isp),'all'=>$arr];
+        }elseif (static::$pattern =='precision'){
 
-        }
-        //开始省数据
-        if(!isset($TbIp['province']) ){
-            unset($arr['TbIp']);
-        }
-        if(!isset($XlIp['province']) ){
-            unset($arr['XlIp']);
-        }
-        if(!isset($BdIp['province']) ){
-            unset($arr['BdIp']);
-        }
-        //如果真有一个结果
-        if(count($arr) == 1){
-            return ['certain'=>array_merge_recursive(each($arr)['value'],$isp),'all'=>$arr];
-        }
-        // 比较省权重
-        // return array_merge_recursive($arr[self::funLarity($arr,'province')],$isp);
-        //开始城市数据
-        if(!isset($TbIp['city']) ){
-            unset($arr['TbIp']);
-        }
-        if(!isset($XlIp['city']) ){
-            unset($arr['XlIp']);
-        }
-        if(!isset($BdIp['city']) ){
-            unset($arr['BdIp']);
-        }
-        //城市优先百度
-        if(count($arr) == 1){
-            return ['certain'=>each($arr)['value'],'all'=>$arr];
+            return static::getIpInfoPrecision($value);
 
-        }else if(count($arr) == 2){
-            if(isset($arr['BdIp'])){
-                return ['certain'=>array_merge_recursive($arr['BdIp'],$isp),'all'=>$arr];
+        }elseif (static::$pattern =='mixture'){
+            return static::getIpInfoMixture($value);
+        }
+    }
+    /**
+     *  high[高性能只使用本地qqwry.dat数据]
+     * @param $value
+     */
+    protected static function getIpInfoHigh($value)
+    {
+        /**
+         * 获取qqwry数据
+         */
+        $QqIp = self::getQqIp($value);
+        if($QqIp){
+            /**
+             * 判断是否是移动网络
+             */
+            $QqIp['NetworkType'] = 'WiFi';
+            if(strstr($QqIp['isp'],'数据上网')){
+                /**
+                 * 是移动网络
+                 */
+                $QqIp['NetworkType'] = 'Cellular';
+                $QqIp['isp'] = strstr($QqIp['isp'],'数据上网',true);
             }
+            return $QqIp;
+        }else{
+            return null;
         }
+    }
 
-        // 比较城市权重
-        return ['certain'=>array_merge_recursive($arr[self::funLarity($arr)],$isp),'all'=>$arr];
+    /**
+     *  precision[高精度 使用qqwry.dat+百度接口 可匹配出是否是手机网络 在手机网络下可匹配到城市]
+     * @param $value
+     */
+    protected static function getIpInfoPrecision($value)
+    {
+        /**
+         * 获取qqwry数据
+         */
+        if($QqIp = self::getQqIp($value)){
+            /**
+             * 判断是否是移动网络
+             */
+            $QqIp['NetworkType'] = 'WiFi';
+            if(strstr($QqIp['isp'],'数据上网')){
+                /**
+                 * 是移动网络
+                 */
+                $QqIp['NetworkType'] = 'Cellular';
+                $QqIp['isp'] = strstr($QqIp['isp'],'数据上网',true);
+            }
+            $arr['QqIp']= &$QqIp;
+            $BdIp = self::getBdIp($value);
+            if( $BdIp && $QqIp){
+                $arr['BdIp']= &$BdIp;
+                /**
+                 * 优先级 默认 $QqIp < $BdIp
+                 * 注意：百度获取的城市比较准确、但是没有区分数据网络和宽带网络，也没有运营商数据
+                 */
+                return array_merge($QqIp,$BdIp);
+            }
+            return $QqIp;
+        }else if ($BdIp = self::getBdIp($value)){
+            return $BdIp;
+        }else{
+            return null;
+        }
 
     }
     /**
-     * [funLarity 把文字切割数组存储]
-     * @param  [type] $arr  [description]
-     * @param  string $name [description]
-     * @return [type]       [description]
+     * mixture[precision + mysql数据库 如果mysql中没有数据 使用precision获取数据 插入mysq中 ，如果mysql有数据匹配 不同就更新覆盖]
+     * @param $value
      */
-    public static function funLarity($arr,$name = 'city')
+    protected static function getIpInfoMixture($value)
     {
-        //获取数组
-        foreach ($arr as $key => $value) {
-            if($value == null || $value == false || !isset($value[$name]) ){
-                 $Data[$key] = 0;
-            }else{
-                $Data[$key] = self::CharToArr($value[$name]);
-            }
-        }
-
-        //获取权重
-        foreach ($Data as $key => $value) {
-        
-            foreach ($Data as $k => $val) {
-                if($k !=$key && $value != null ){
-                    $sor[$key][$k] = count(array_intersect($value,$val));
-                }
-            }
-
-        }
-
-        foreach ($sor as $key => $value) {
-            arsort($value);
-            $sorData[] = each($value)['key'];
-        }
-        //排序权重
-        $sorData = array_count_values($sorData);
-        arsort($sorData);
-        return each($sorData)['key'];
-
+        return null;
     }
 
+    /**
+     * qqwry ip接口
+     * @param $value
+     * @return mixed
+     */
+    public static function getQqIp($value)
+    {
+        $ToLocation = new ToLocation();
+        $qqwry = $ToLocation->getlocation($value);
+        $qqwryData = static::ipToLocation($qqwry['country']);
+        $qqwryData['isp'] = $qqwry['area'];
+        return $qqwryData;
+    }
 
     /**
      * [getTbIp 淘宝ip接口]
@@ -577,7 +607,7 @@ class TerminalInfo{
         return $reData;
     }
     /**
-     * [getSgIp 新浪IP接口]
+     * [getSgIp 新浪IP接口] 好像不能用
      * @Effect
      * @param  [type] $value [description]
      * @return [type]        [description]
@@ -602,6 +632,25 @@ class TerminalInfo{
     }
 
     /**
+     *
+     * https://freeapi.ipip.net/
+     */
+    public static function ipipnet($value)
+    {
+
+        $url = 'https://freeapi.ipip.net/'.$value;
+        $Data = json_decode(self::http_request($url),true);
+
+        if($Data){
+            $reData['country'] = $Data[0];//国家
+            $reData['province'] = $Data[1];//省
+            $reData['city'] = $Data[2];//城市
+            $reData['isp'] = $Data['4'];//服务商
+        }
+        return false;
+
+    }
+    /**
      * [getBdIp 百度接口]
      * @Effect
      * @param  [type] $value [description]
@@ -609,7 +658,10 @@ class TerminalInfo{
      */
     public static function getBdIp($value)
     {
-
+        /**
+         * 获取配置
+         */
+        if(!static::$BdApiKey){ static::$BdApiKey = Config::API_CONFIG['BaiduIp']['Key'];}
 
         $url = 'https://api.map.baidu.com/location/ip?ip='.$value.'&ak='.self::$BdApiKey.'&coor=bd09ll';
 
@@ -619,7 +671,9 @@ class TerminalInfo{
         }
         if($Data['status'] !=0){
            return  false;
-        }  
+        }
+        $reData['address'] = $Data['address']??'';
+        $reData['street_number'] = $Data['street_number']??'';
         $reData['point'] =  $Data['content']['point'];
         $Data = $Data['content']['address_detail'];
         //处理数据
@@ -681,7 +735,102 @@ class TerminalInfo{
         curl_close($curl);
         return $output;
     }
+    /**
+     * 具体位置转换成相应的省份和城市
+     * @param $position
+     * @return array
+     */
+    public static function ipToLocation($position){
+        //有省，有市,普通省份
+        if(strstr($position, '省') && strstr($position, '市')){
+            $explodePosition = explode('省', $position);
+            $province        = $explodePosition[0].'省';
+            $city = explode('市', $explodePosition[1])[0].'市';
+            if (empty($province) && empty($city)) {
+                $province = $position.'省';
+                $city = $position.'市';
+            }
+        }elseif(strstr($position, '省') && strstr($position, '州')){
+            $explodePosition = explode('省', $position);
+            $province        = $explodePosition[0];
+            $city = explode('州', $explodePosition[1])[0];
+            if (empty($province) && empty($city)) {
+                $province = $position.'省';
+                $city = $position.'州';
+            }
+        }
+        //没有省但是有市,自治区或者直辖市,或者国外的某个城市
+        elseif(!strstr($position, '省') && strstr($position, '市')){
+            //自治区
+            if(strstr($position, '宁夏')){
+                $province = '宁夏回族自治区';
+                $city     = explode('市', explode('宁夏', $position)[1])[0].'市';
+            }elseif(strstr($position, '内蒙古')){
+                $province = '内蒙古自治区';
+                $city     = explode('市', explode('内蒙古', $position)[1])[0].'市';
+            }elseif(strstr($position, '新疆')){
+                $province = '新疆维吾尔自治区';
+                $city     = explode('市', explode('新疆', $position)[1])[0].'市';
+            }elseif(strstr($position, '广西')){
+                $province = '广西壮族自治区';
+                $city     = explode('市', explode('广西', $position)[1])[0].'市';
+            }elseif(strstr($position, '西藏')){
+                $province = '西藏自治区';
+                $city     = explode('市', explode('西藏', $position)[1])[0].'市';
+            }elseif(strstr($position, '北京市')){
+                $province = '北京市';
+                $city     = $province.'市';
+            }elseif(strstr($position, '天津市')){
+                $province = '天津市'.'市';
+                $city     = $province.'市';
+            }elseif(strstr($position, '重庆市')){
+                $province = '重庆市';
+                $city     = $province.'市';
+            }elseif(strstr($position, '上海市')){
+                $province = '上海市';
+                $city     = $province.'市';
+            }else{
+                $length = strpos($position, ' ');
+                //判断字符串内是否存在空格键
+                if ($length !== false) {
+                    $position = explode(' ',$position);
+                    $province = $position[0];
+                    //判断字符串内是否有 市 这个字符串
+                    if(strpos($position[1],'市')!==false){
+                        $city = explode('市',$position[1])[0];
+                    }else{
+                        $city = $position[1];//没有，就把空格剩余的字段赋值给城市
+                    }
 
+                } else {
+                    $province = $position;
+                    $city = $position;
+                }
+            }
+        }
+        elseif(strstr($position, '省') && !strstr($position, '市')){
+            $start = strpos($position,'省');
+            $province = substr($position,0,$start).'省';
+            $city = '暂无数据';
+        }
+        //没有省也没有市,特别行政区或者国外
+        elseif(!strstr($position, '省') && !strstr($position, '市')){
+            $length = strpos($position, ' ');
+            //判断字符串内是否存在空格键
+            if ($length !== false) {
+                $position = explode(' ', $position);
+                $province = $position[0];
+                $city = $position[1];//把空格剩余的字段赋值给城市
+            } else {
+                $province = $position;
+                $city = $position;
+            }
+        }else{
+            $province = $position.'省';
+            $city = $position;
+        }
+        return ['province'=>$province,'city'=>$city];
+    }
     /**
      * [CharToArr 把文字切割数组存储  ]
      * @Effect

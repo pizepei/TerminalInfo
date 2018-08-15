@@ -5,10 +5,11 @@
  * Date: 2018/8/3
  * Time: 15:47
  */
-namespace pizepei\terminalInfo
-
+namespace pizepei\terminalInfo;
+use pizepei\terminalInfo\UpdateQqwry;
 class ToLocation
 {
+
     /**
      * QQWry.Dat文件指针
      *
@@ -41,8 +42,12 @@ class ToLocation
      */
     public function __construct($filename = 'qqwry.dat')
     {
+        /**
+         * 更新Qqwry文件
+         */
+        $data = new UpdateQqwry;
         $this->fp = 0;
-        if (($this->fp = fopen(DOCUMENT_ROOT.'service/toLocation/'.$filename, 'rb')) !== false) {
+        if (($this->fp = fopen($data->prc.$filename, 'rb')) !== false) {
             $this->firstip = $this->getlong();
             $this->lastip = $this->getlong();
             $this->totalip = ($this->lastip - $this->firstip) / 7;

@@ -4,16 +4,36 @@
  * @Date:   2018-08-10 15:20:07
  * @Last Modified by:   pizepei
  * @Last Modified time: 2018-08-10 15:28:58
+ * @title 纯真数据库自动更新
  */
 namespace pizepei\terminalInfo;
 
 class UpdateQqwry{
 
+    public $prc = '..'.DIRECTORY_SEPARATOR.'runtime'.DIRECTORY_SEPARATOR.'cache'.DIRECTORY_SEPARATOR;
 
-    public function getQqwry()
+    public function __construct()
+    {
+
+        if(!@filemtime($this->prc."qqwry.dat")){
+            $this->getQqwry();
+            return true;
+        }
+        /**
+         * 默认3天86400*3
+         */
+        if((@filemtime($this->prc."qqwry.dat") + (86400*3)) < time() ){
+            $this->getQqwry();
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    protected function getQqwry()
     {
       /*
-            纯真数据库自动更新原理实现__FILE__
+            纯真数据库自动更新原理实_FILE__
             www.shuax.com 2014.03.27
         */
         $copywrite = file_get_contents("http://update.cz88.net/ip/copywrite.rar");
@@ -34,7 +54,9 @@ class UpdateQqwry{
          * [$fp description]
          * @var [type]
          */
-        $fp = fopen(dirname(__FILE__).DIRECTORY_SEPARATOR."qqwry.dat", "wb");
+//        $fp = fopen(dirname(__FILE__).DIRECTORY_SEPARATOR."qqwry.dat", "wb");
+        $fp = fopen($this->prc."qqwry.dat", "wb");
+
         // var_dump($fp);
         if($fp)
         {
