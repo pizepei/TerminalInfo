@@ -22,9 +22,12 @@ class TerminalInfo{
      * true 单例模式
      * @var string
      */
-    protected static $singleton = true;
-
-
+    public static $singleton = true;
+    /**
+     * ip
+     * @var string
+     */
+    public static $ip ='';
     //浏览器类型
     public static  $AgentInfoBrower = array(  
                 'MSIE' => 1,  
@@ -64,10 +67,9 @@ class TerminalInfo{
             'Windows_Vista'=> 4, 
             'Windows_7'=> 5, 
             'Windows_8'=> 6, 
-            'Windows_10'=> 7,
-            'Windows_XP'=> 8,  
+            'Windows_XP'=> 8,
             'Windows_2000'=> 9,  
-            'Windows_NT'=> 10,  
+            'Windows_10'=> 10,
             'Windows_32'=> 11,  
             'Linux'=> 12,  
             'Unix'=> 13,  
@@ -102,10 +104,10 @@ class TerminalInfo{
     const Windows_Vista = 4; 
     const Windows_7 = 5; 
     const Windows_8 = 6; 
-    const Windows_10 = 7;
+    const Windows_10 = 10;
     const Windows_XP = 8;  
     const Windows_2000 = 9;  
-    const Windows_NT = 10;  
+    const Windows_NT = 7;
     const Windows_32 = 11;  
     const Linux = 12;  
     const Unix = 13;  
@@ -161,6 +163,7 @@ class TerminalInfo{
         }else{
 
         }
+        $arr['ip'] = static::$ip;
         //判断返回格式
         return static::$ArowserInfo = $type == 'arr'?$arr:json_encode($arr);
 
@@ -194,17 +197,21 @@ class TerminalInfo{
 
         if(self::get_os() ==29){
             $Build = self::getBuild();
-
             $count = count($Build);
-            if($count >1){
-                $count = $count-1;
-                $count = $count == 0 ?'':$Build[$count];
-                $arr['Os'] = $Build[1].' | '.$count;
-            }else{
-                $arr['Os'] = $Build[0];
-            }
+            if($count == 2){
+                /**
+                 * 0 系统 1 手机型号
+                 */
 
-            $arr['Build'] = $Build;//获取安卓手机型号
+                $arr['Build'] = $Build;//获取安卓手机型号
+                $arr['Os'] = $Build[0];
+
+            }else if($count == 1){
+                $arr['Os'] = $Build[0];
+            }else if($count >2){
+                $arr['Os'] = implode('|',$Build);
+                $arr['Build'] = &$Build;
+            }
             $arr['NetType'] = self::getBuildNetType();
         }else if(self::get_os() == 30){
 
@@ -224,6 +231,8 @@ class TerminalInfo{
             $arr['Os'] = array_search(self::get_os(),self::$OsInfo);//获取操作系统
             $arr['NetType'] = 'Ethernet';
         }
+
+        $arr['ip'] = static::$ip;
         //判断返回格式
         return static::$ArowserPro = $type == 'arr'?$arr:json_encode($arr);
     }
@@ -481,6 +490,7 @@ class TerminalInfo{
                 return $value;
             }
         }
+        static::$ip = $value;
         if(static::$pattern =='high'){
 
             return static::getIpInfoHigh($value);

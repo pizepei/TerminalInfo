@@ -14,6 +14,10 @@ class UpdateQqwry{
 
     public function __construct()
     {
+        if(is_file($this->prc."qqwry.dat")){
+            $this->getQqwry();
+            return true;
+        }
 
         if(!@filemtime($this->prc."qqwry.dat")){
             $this->getQqwry();
