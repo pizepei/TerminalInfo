@@ -263,6 +263,7 @@ class TerminalInfo{
 
     /**
      * 获得访问者浏览器语言
+     * @return bool|string
      */
     public static function get_lang() {
         if (!empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
@@ -301,7 +302,7 @@ class TerminalInfo{
      * @return [type] [description]
      */
     public static function get_os(){  
-    $agent = $_SERVER['HTTP_USER_AGENT'];  
+        $agent = $_SERVER['HTTP_USER_AGENT'];
         $os = false;  
         if (preg_match('/win/i', $agent) && strpos($agent, '95'))  
         {  
@@ -467,6 +468,10 @@ class TerminalInfo{
         return explode('; ',$arrt[1]);
     }
 
+    /**
+     * 回去移动设备的网络
+     * @return string
+     */
     public static function getBuildNetType(){
         // $agent = 'Mozilla/5.0 (Linux; Android 7.1.1; ONEPLUS A5010 Build/NMF26X; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/043906 Mobile Safari/537.36 MicroMessenger/6.6.3.1260(0x26060339) NetType/WIFI Language/zh_CN'; 
         $agent = $_SERVER['HTTP_USER_AGENT'];  
@@ -531,7 +536,6 @@ class TerminalInfo{
             return null;
         }
     }
-
     /**
      *  precision[高精度 使用qqwry.dat+百度接口 可匹配出是否是手机网络 在手机网络下可匹配到城市]
      * @param $value
@@ -711,26 +715,26 @@ class TerminalInfo{
      * @return [type] [description]
      */
     public static function get_ip(){
-            //判断服务器是否允许$_SERVER
-            if(isset($_SERVER)){    
-                if(isset($_SERVER['HTTP_X_FORWARDED_FOR'])){
-                    $realip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-                }elseif(isset($_SERVER['HTTP_CLIENT_IP'])) {
-                    $realip = $_SERVER['HTTP_CLIENT_IP'];
-                }else{
-                    $realip = $_SERVER['REMOTE_ADDR'];
-                }
+        //判断服务器是否允许$_SERVER
+        if(isset($_SERVER)){
+            if(isset($_SERVER['HTTP_X_FORWARDED_FOR'])){
+                $realip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            }elseif(isset($_SERVER['HTTP_CLIENT_IP'])) {
+                $realip = $_SERVER['HTTP_CLIENT_IP'];
             }else{
-                //不允许就使用getenv获取  
-                if(getenv("HTTP_X_FORWARDED_FOR")){
-                      $realip = getenv( "HTTP_X_FORWARDED_FOR");
-                }elseif(getenv("HTTP_CLIENT_IP")) {
-                      $realip = getenv("HTTP_CLIENT_IP");
-                }else{
-                      $realip = getenv("REMOTE_ADDR");
-                }
+                $realip = $_SERVER['REMOTE_ADDR'];
             }
-            return $realip;
+        }else{
+            //不允许就使用getenv获取
+            if(getenv("HTTP_X_FORWARDED_FOR")){
+                  $realip = getenv( "HTTP_X_FORWARDED_FOR");
+            }elseif(getenv("HTTP_CLIENT_IP")) {
+                  $realip = getenv("HTTP_CLIENT_IP");
+            }else{
+                  $realip = getenv("REMOTE_ADDR");
+            }
+        }
+        return $realip;
     }  
     /**
      * [http_request curl请求]
