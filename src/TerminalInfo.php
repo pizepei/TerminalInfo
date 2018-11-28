@@ -4,13 +4,12 @@
  * @Date:   2018-02-10 22:57:52
  * @Last Modified by:   pizepei
  * @Last Modified time: 2018-08-10 15:28:46
+ * @Title 访问客户端信息
  */
 namespace pizepei\terminalInfo;
 use pizepei\terminalInfo\ToLocation;
 use pizepei\config\Config;
-/**
- * 访问客户端信息
- */
+
 class TerminalInfo{
     /**
      * 模式  high[高性能只使用本地qqwry.dat数据]  precision[高精度 使用qqwry.dat+百度接口 可匹配出是否是手机网络 在手机网络下可匹配到城市] mixture[precision + mysql数据库 如果mysql中没有数据 使用precision获取数据 插入mysq中 ，如果mysql有数据匹配 不同就更新覆盖]
@@ -28,7 +27,10 @@ class TerminalInfo{
      * @var string
      */
     public static $ip ='';
-    //浏览器类型
+    /**
+     * 浏览器类型
+     * @var array
+     */
     public static  $AgentInfoBrower = array(  
                 'MSIE' => 1,  
                 'MicroMessenger' => 6,  
@@ -166,7 +168,6 @@ class TerminalInfo{
         $arr['ip'] = static::$ip;
         //判断返回格式
         return static::$ArowserInfo = $type == 'arr'?$arr:json_encode($arr);
-
     }
 
     /**

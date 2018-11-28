@@ -34,12 +34,14 @@ class UpdateQqwry{
         }
     }
 
+    /**
+     * 更新qqwry.dat文件
+     */
     protected function getQqwry()
     {
-      /*
-            纯真数据库自动更新原理实_FILE__
-            www.shuax.com 2014.03.27
-        */
+        /**
+         * 纯真数据库自动更新原理实_FILE__
+         */
         $copywrite = file_get_contents("http://update.cz88.net/ip/copywrite.rar");
         $qqwry = file_get_contents("http://update.cz88.net/ip/qqwry.rar");
         //函数从二进制字符串对数据进行解包。
@@ -61,7 +63,6 @@ class UpdateQqwry{
 //        $fp = fopen(dirname(__FILE__).DIRECTORY_SEPARATOR."qqwry.dat", "wb");
         $fp = fopen($this->prc."qqwry.dat", "wb");
 
-        // var_dump($fp);
         if($fp)
         {
             /**

@@ -4,6 +4,7 @@
  * User: Administrator
  * Date: 2018/8/3
  * Time: 15:47
+ * @Title 解析qqwry.dat文件（查询）
  */
 namespace pizepei\terminalInfo;
 use pizepei\terminalInfo\UpdateQqwry;
