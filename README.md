@@ -4,6 +4,7 @@
 + 1、通过HTTP_USER_AGENT信息获取客户端的语言、客户端类型、客户端操作系统、HTTP_ACCEPT_LANGUAGE
 + 2、通过HTTP_ACCEPT_LANGUAGE信息获取客户端类型、客户端操作系统、网络类型等信息。
 + 3、通过搜集的IP信息查询API综合分析客户端所在国家、省、城市信息。
++ 4、通过搜集的IP信息、客户端信息综合分析客户端的网络状态。
 # 使用方法：
 + 1、获取简化数据方法：TerminalInfo::getArowserInfo([type]) $type默认为arr数组形式返回数据，json为sjon形式返回数据
 + 1、获取全中文数据方法：TerminalInfo::getArowserPro([type]) $type默认为arr数组形式返回数据，json为sjon形式返回数据
