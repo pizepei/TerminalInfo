@@ -16,7 +16,8 @@ class UpdateQqwry{
 
     public function __construct()
     {
-        if(is_file($this->prc."qqwry.dat")){
+        if(!is_file($this->prc."qqwry.dat")){
+            Func::M('file.file')::createDir($this->prc);
             $this->getQqwry();
             return true;
         }
