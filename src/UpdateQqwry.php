@@ -8,6 +8,8 @@
  */
 namespace pizepei\terminalInfo;
 
+use pizepei\func\Func;
+
 class UpdateQqwry{
 
     public $prc = '..'.DIRECTORY_SEPARATOR.'runtime'.DIRECTORY_SEPARATOR.'cache'.DIRECTORY_SEPARATOR;
@@ -20,6 +22,7 @@ class UpdateQqwry{
         }
 
         if(!@filemtime($this->prc."qqwry.dat")){
+            Func::M('file.file')::createDir($this->prc);
             $this->getQqwry();
             return true;
         }
