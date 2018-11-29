@@ -11,8 +11,16 @@ namespace pizepei\terminalInfo;
 use pizepei\func\Func;
 
 class UpdateQqwry{
-
+    /**
+     * 缓存目录
+     * @var string
+     */
     public $prc = '..'.DIRECTORY_SEPARATOR.'runtime'.DIRECTORY_SEPARATOR.'cache'.DIRECTORY_SEPARATOR;
+    /**
+     * 缓存时间 单位天
+     * @var int
+     */
+    public $updateTime = 3;
 
     public function __construct()
     {
@@ -30,7 +38,7 @@ class UpdateQqwry{
         /**
          * 默认3天86400*3
          */
-        if((@filemtime($this->prc."qqwry.dat") + (86400*3)) < time() ){
+        if((@filemtime($this->prc."qqwry.dat") + (86400*$this->updateTime)) < time() ){
             $this->getQqwry();
             return true;
         }else{
