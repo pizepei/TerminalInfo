@@ -706,7 +706,6 @@ class TerminalInfo{
         //区域
         if(!empty($Data['district'])){$reData['district'] = $Data['district'];}
         return $reData;
-
     }
 
     /**
