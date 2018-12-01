@@ -7,15 +7,14 @@
  * @Title 访问客户端信息
  */
 namespace pizepei\terminalInfo;
+use pizepei\config\TerminalInfoConfig;
 use pizepei\terminalInfo\ToLocation;
-use pizepei\config\Config;
-
 class TerminalInfo{
     /**
      * 模式  high[高性能只使用本地qqwry.dat数据]  precision[高精度 使用qqwry.dat+百度接口 可匹配出是否是手机网络 在手机网络下可匹配到城市] mixture[precision + mysql数据库 如果mysql中没有数据 使用precision获取数据 插入mysq中 ，如果mysql有数据匹配 不同就更新覆盖]
      * @var array
      */
-    protected static $pattern = 'precision';
+    protected static $pattern = null;
 
     /**
      * true 单例模式
@@ -489,6 +488,7 @@ class TerminalInfo{
      * @return [type]        [description]
      */
     public static function getIpInfo($value = ''){
+
         //判断并且获取IP数据
         if(empty($value)){
             $value = self::get_ip();
@@ -497,6 +497,12 @@ class TerminalInfo{
             }
         }
         static::$ip = $value;
+        /**
+         * 判断是否有文件配置
+         */
+        if(!static::$pattern){
+            static::$pattern = TerminalInfoConfig::PATTERN;
+        }
         if(static::$pattern =='high'){
 
             return static::getIpInfoHigh($value);
@@ -684,7 +690,7 @@ class TerminalInfo{
         /**
          * 获取配置
          */
-        if(!static::$BdApiKey){ static::$BdApiKey = Config::API_CONFIG['BaiduIp']['Key'];}
+        if(!static::$BdApiKey){ static::$BdApiKey = TerminalInfoConfig::API_CONFIG['BaiduIp']['Key'];}
 
         $url = 'https://api.map.baidu.com/location/ip?ip='.$value.'&ak='.self::$BdApiKey.'&coor=bd09ll';
 
