@@ -679,11 +679,15 @@ class TerminalInfo{
         return false;
 
     }
+
     /**
-     * [getBdIp 百度接口]
-     * @Effect
-     * @param  [type] $value [description]
-     * @return [type]        [description]
+     * @Author: pizepei
+     * @Created: 2018/12/2 22:52
+     * @param $value
+     * @return bool
+     * @throws \Exception
+     * @title  [getBdIp 百度接口]
+     * @explain 一般是方法功能说明、逻辑说明、注意事项等。
      */
     public static function getBdIp($value)
     {
@@ -699,7 +703,8 @@ class TerminalInfo{
            return  false;
         }
         if($Data['status'] !=0){
-           return  false;
+            throw new \Exception(json_encode($Data));
+            return  false;
         }
         $reData['address'] = $Data['address']??'';
         $reData['street_number'] = $Data['street_number']??'';
