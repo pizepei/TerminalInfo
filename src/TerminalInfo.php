@@ -438,17 +438,18 @@ class TerminalInfo{
     /**
      * [getBuild 获取安卓手机型号]
      * @Effect
-     * @return [type] [description]
+     * @return [type] [description] 0 系统  1 手机型号
      */
     public static function getBuild(){
-        $agent = $_SERVER['HTTP_USER_AGENT'];  
+        $agent = $_SERVER['HTTP_USER_AGENT'];
         if(!preg_match("/; (.*) Build\//i",$agent,$arrt)){
-            return '未知型号';
+            if(!preg_match("/\(linux; (.*)\) Apple/i",$agent,$arrt)){
+                return '未知型号';
+            }
         }
-        if(empty($arrt[1])){
-            return '未知型号数据';
+        if(!isset($arrt[1]) && empty($arrt[1])){
+            return ['未知型号数据'];
         }
-
         return explode('; ',$arrt[1]);
     }
     /**
@@ -457,7 +458,7 @@ class TerminalInfo{
      * @return [type] [description]
      */
     public static function getBuildIPhone(){
-        $agent = $_SERVER['HTTP_USER_AGENT'];  
+        $agent = $_SERVER['HTTP_USER_AGENT'];
         if(!preg_match("/; CPU (.*) like Mac OS X/i",$agent,$arrt)){
             return '未知型号版本';
         }
