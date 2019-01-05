@@ -505,7 +505,6 @@ class TerminalInfo{
             static::$pattern = TerminalInfoConfig::PATTERN;
         }
         if(static::$pattern =='high'){
-
             return static::getIpInfoHigh($value);
 
         }elseif (static::$pattern =='precision'){
