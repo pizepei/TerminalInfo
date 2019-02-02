@@ -502,7 +502,7 @@ class TerminalInfo{
          * 判断是否有文件配置
          */
         if(!static::$pattern){
-            static::$pattern = TerminalInfoConfig::PATTERN;
+            static::$pattern = \Config::TERMINAL_INFO_PATTERN;
         }
         if(static::$pattern =='high'){
             return static::getIpInfoHigh($value);
@@ -694,7 +694,7 @@ class TerminalInfo{
         /**
          * 获取配置
          */
-        if(!static::$BdApiKey){ static::$BdApiKey = TerminalInfoConfig::API_CONFIG['BaiduIp']['Key'];}
+        if(!static::$BdApiKey){ static::$BdApiKey = \Config::TERMINAL_INFO_API_CONFIG['BaiduIp']['Key'];}
 
         $url = 'https://api.map.baidu.com/location/ip?ip='.$value.'&ak='.self::$BdApiKey.'&coor=bd09ll';
 
