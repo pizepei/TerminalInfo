@@ -734,7 +734,9 @@ class TerminalInfo{
             }else{
                 $realip = getenv("REMOTE_ADDR");
             }
-        }else if(\Config::TERMINAL_IP_PATTERN == 'cnd' || \Config::TERMINAL_IP_PATTERN == 'agency'){
+
+        }else if(\Config::TERMINAL_IP_PATTERN == 'cdn' || \Config::TERMINAL_IP_PATTERN == 'agency'){
+
             //判断服务器是否允许$_SERVER
             if(isset($_SERVER)){
                 if(isset($_SERVER['HTTP_X_FORWARDED_FOR'])){
