@@ -9,6 +9,7 @@
 namespace pizepei\terminalInfo;
 
 use pizepei\func\Func;
+use pizepei\helper\Helper;
 
 class UpdateQqwry{
     /**
@@ -25,13 +26,13 @@ class UpdateQqwry{
     public function __construct()
     {
         if(!is_file($this->prc."qqwry.dat")){
-            Func::M('file.file')::createDir($this->prc);
+            Helper::file()->createDir($this->prc);
             $this->getQqwry();
             return true;
         }
 
         if(!@filemtime($this->prc."qqwry.dat")){
-            Func::M('file.file')::createDir($this->prc);
+            Helper::file()->createDir($this->prc);
             $this->getQqwry();
             return true;
         }
