@@ -468,6 +468,31 @@ class TerminalInfo{
         return explode('; ',$arrt[1]);
     }
 
+    const MicroVersions =[
+        'qq'=>'MQQBrowser',
+        'WeChat'=>'MicroMessenger',
+        'AppleWebKit'=>'AppleWebKit',
+        'Chrome'=>'Chrome',
+    ];
+
+    /**
+     * @Author 皮泽培
+     * @Created 2019/8/5 15:15
+     * @return array
+     * @title  获取微信版本
+     * @throws \Exception
+     */
+    public static function getBuildIMicroVersions($type='WeChat')
+    {
+        if (isset(self::MicroVersions[$type])){
+            $type = self::MicroVersions[$type];
+        }
+        if (preg_match("/$type\/([\d\.]+)/i",$_SERVER['HTTP_USER_AGENT'],$arr)){
+            list($name,$versions) = explode('/',$arr[0]);
+            return ['name'=>$name,'versions'=>$versions];
+        }
+        return null;
+    }
     /**
      * 回去移动设备的网络
      * @return string
