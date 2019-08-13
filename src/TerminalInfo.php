@@ -7,7 +7,6 @@
  * @Title 访问客户端信息
  */
 namespace pizepei\terminalInfo;
-use pizepei\config\TerminalInfoConfig;
 use pizepei\terminalInfo\ToLocation;
 class TerminalInfo{
     /**
@@ -42,7 +41,7 @@ class TerminalInfo{
                 'Opera' => 9,  
                 'OPR' => 10,  
                 'Safari' => 11,  
-                'Trident/' => 12,
+                'Trident' => 12,
             );
     //浏览器类型
     public static   $AgentInfoBroweInfo = array(  
@@ -91,7 +90,9 @@ class TerminalInfo{
             'offline'=> 28,  
             'Android' => 29, 
             'iPhone' => 30,
-        ];
+            'ipad' => 31,
+
+    ];
     //操作系统
     public static  $IpInfoArr =['192.168.1.1','127.0.0.1','0.0.0.0'];
     //  百度地图api接口 配置
@@ -129,6 +130,7 @@ class TerminalInfo{
     const offline = 28; 
     const Android = 29;  
     const iPhone = 30;
+    const iPad = 31;
     /**
      * 获取浏览数据
      * @var array
@@ -152,14 +154,13 @@ class TerminalInfo{
         $arr['language'] = self::get_lang();//获取浏览器语言
 
         $arr['Os'] = self::get_os();//获取操作系统
-
         $arr['IpInfo'] = self::getIpInfo();//时时ip信息
 
         if($arr['Os'] == 29){
             $arr['Build'] = self::getBuild();//获取安卓手机型号
             $arr['NetType'] = self::getBuildNetType();
-        }else if($arr['Os'] == 30){
-            $arr['Build'] = self::getBuildIPhone();
+        }else if($arr['Os'] == 30 || $arr['Os']==31 || $arr['Os']==16){
+            $arr['Build'] = self::getBuildIPhone($arr['Os']);
             $arr['NetType'] = self::getBuildNetType();
         }else{
 
@@ -194,8 +195,8 @@ class TerminalInfo{
         $arr['Os'] =  self::get_os() ==29?self::get_os():array_search(self::get_os(),self::$OsInfo);//获取操作系统
 
         $arr['IpInfo'] = self::getIpInfo();//ip信息相关信息
-
-        if(self::get_os() ==29){
+        $get_os = self::get_os();
+        if($get_os ==29){
             $Build = self::getBuild();
             $count = count($Build);
             if($count == 2){
@@ -213,18 +214,8 @@ class TerminalInfo{
                 $arr['Build'] = &$Build;
             }
             $arr['NetType'] = self::getBuildNetType();
-        }else if(self::get_os() == 30){
-
-            $Build = self::getBuildIPhone();
-            $count = count($Build);
-            if($count >1){
-                $count = $count-1;
-                $count = $count == 0 ?'':$Build[$count];
-                $arr['Os'] = $Build[1].' | '.$count;
-            }else{
-                $arr['Os'] = $Build[0];
-            }
-            // $arr['Os'] = $Build[0].' '.$Build[1];
+        }else if($get_os == 30 || $get_os==31 || $get_os==16){
+            $Build = self::getBuildIPhone($get_os);
             $arr['Build'] = $Build;
             $arr['NetType'] = self::getBuildNetType();
         }else{
@@ -249,15 +240,18 @@ class TerminalInfo{
             $agent = $_SERVER['HTTP_USER_AGENT'];  
             $browser_num = 0;//未知  
             foreach(self::$AgentInfoBrower as $bro => $val){  
-                if(stripos($agent, $bro) !== false){  
-                    $browser_num = $val;  
+                if(stripos($agent, $bro) !== false){
+                    $Versions = self::getBuildIMicroVersions($bro);
+                    $browser_num = $val;
                     break;  
                 }
             }
-            return  $browser_num;  
+            $Data = ['name'=>$browser_num,'versions'=>$Versions['versions']];
+            return  $Data;
         }
         //存入就是获取 文字浏览器内核名称
-        return array_search($Data,self::$AgentInfoBroweInfo);
+        $Data['name'] = array_search($Data['name'],self::$AgentInfoBroweInfo);
+        return $Data;
     }
 
     /**
@@ -364,10 +358,14 @@ class TerminalInfo{
         {  
           $os = self::IBM_OS_2;  
         }  
-        else if (preg_match('/Mac/i', $agent) && preg_match('/PC/i', $agent))  
-        {  
-          $os = self::Macintosh;  
-        }  
+        else if (preg_match('/Mac/i', $agent) && preg_match('/Macintosh/i', $agent))
+        {
+          $os = self::Macintosh;
+        }
+        else if (preg_match('/iPad/i', $agent) && preg_match('/Mac OS/i', $agent))
+        {
+            $os = self::iPad;
+        }
         else if (preg_match('/PowerPC/i', $agent))  
         {  
           $os = self::PowerPC;  
@@ -422,8 +420,8 @@ class TerminalInfo{
         else  
         {  
           $os = self::unknown_os;  
-        }  
-        return $os;    
+        }
+        return $os;
     }  
 
     /**
@@ -457,44 +455,65 @@ class TerminalInfo{
      * @Effect
      * @return [type] [description]
      */
-    public static function getBuildIPhone(){
+    public static function getBuildIPhone($code=30){
         $agent = $_SERVER['HTTP_USER_AGENT'];
-        if(!preg_match("/; CPU (.*) like Mac OS X/i",$agent,$arrt)){
-            return '未知型号版本';
+        if ($code == 16){
+            if(preg_match("/Macintosh; U; (.*);/i",$agent,$arrt)){
+                if(!empty($arrt[1])){
+                    list($name,$versions) = explode(' OS X ',$arrt[1]);
+                }
+            }
+        }else if ($code == 30){
+            if(preg_match("/; CPU (.*) like Mac OS X/i",$agent,$arrt)){
+                if(!empty($arrt[1])){
+                    list($name,$versions) = explode(' OS ',$arrt[1]);
+                }
+            }
+        }else if ($code == 31){
+            if(preg_match("/iPad; CPU OS (.*) like Mac OS X/i",$agent,$arrt)){
+                if(!empty($arrt[1])){
+                    $name = 'AMC';
+                    $versions= $arrt[1];
+                }
+            }
         }
-        if(empty($arrt[1])){
-            return '未知型号版本数据';
-        }
-        return explode('; ',$arrt[1]);
+        return ['name'=>$name??'','versions'=>$versions??''];
     }
 
     const MicroVersions =[
-        'qq'=>'MQQBrowser',
-        'WeChat'=>'MicroMessenger',
-        'AppleWebKit'=>'AppleWebKit',
-        'Chrome'=>'Chrome',
+        'MQQBrowser'=>'MQQBrowser\/',
+        'MicroMessenger'=>'MicroMessenger\/',
+        'AppleWebKit'=>'AppleWebKit\/',
+        'Chrome'=>'Chrome\/',
+        'MSIE'=>'MSIE ',
+        'Safari'=>'Safari\/',
     ];
 
     /**
      * @Author 皮泽培
      * @Created 2019/8/5 15:15
      * @return array
-     * @title  获取微信版本
+     * @title  浏览器版本
      * @throws \Exception
      */
-    public static function getBuildIMicroVersions($type='WeChat')
+    public static function getBuildIMicroVersions($type='MSIE')
     {
         if (isset(self::MicroVersions[$type])){
             $type = self::MicroVersions[$type];
         }
-        if (preg_match("/$type\/([\d\.]+)/i",$_SERVER['HTTP_USER_AGENT'],$arr)){
-            list($name,$versions) = explode('/',$arr[0]);
+        $blank = ['MSIE '];
+        if (preg_match("/$type([\d\.]+)/i",$_SERVER['HTTP_USER_AGENT'],$arr)){
+            if (in_array($type,$blank)){
+                list($name,$versions) = explode(' ',$arr[0]);
+            }else{
+                list($name,$versions) = explode('/',$arr[0]);
+            }
             return ['name'=>$name,'versions'=>$versions];
         }
         return null;
     }
     /**
-     * 回去移动设备的网络
+     * 获取移动设备的网络
      * @return string
      */
     public static function getBuildNetType(){

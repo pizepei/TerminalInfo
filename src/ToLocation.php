@@ -48,7 +48,7 @@ class ToLocation
          */
         $data = new UpdateQqwry;
         $this->fp = 0;
-        if (($this->fp = fopen($data->prc.$filename, 'rb')) !== false) {
+        if (($this->fp = fopen($data->path.$filename, 'rb')) !== false) {
             $this->firstip = $this->getlong();
             $this->lastip = $this->getlong();
             $this->totalip = ($this->lastip - $this->firstip) / 7;
