@@ -14,7 +14,16 @@ class TerminalInfo{
      * @var array
      */
     protected static $pattern = null;
-
+    /**
+     * redis 对象
+     * @var \Redis
+     */
+    public static $redis = null;
+    /**
+     * redis 缓存有效期 单位小时
+     * @var int
+     */
+    public static $period = 24;
     /**
      * true 单例模式
      * @var string
@@ -29,69 +38,84 @@ class TerminalInfo{
      * 浏览器类型
      * @var array
      */
-    public static  $AgentInfoBrower = array(  
-                'MSIE' => 1,  
-                'MicroMessenger' => 6,  
-                'Firefox' => 2,  
-                'QQBrowser' => 3,  
-                'QQ/' => 4,  
-                'UCBrowser' => 5,  
-                'Edge' => 7,  
-                'Chrome' => 8,  
-                'Opera' => 9,  
-                'OPR' => 10,  
-                'Safari' => 11,  
-                'Trident' => 12,
-            );
-    //浏览器类型
+    public static  $AgentInfoBrower = array(
+        'SymbianOS'=>16,
+        'MicroMessenger' => 6,
+        'TencentTraveler' => 14,
+        'Maxthon'   =>13,
+        'Firefox' => 2,
+        'MQQBrowser' => 3,
+        'QQ/' => 4,
+        'UCBrowser' => 5,
+        'UCWEB'     =>17,
+        'Edge' => 7,
+        'Chrome' => 8,
+        'Opera' => 9,
+        'OPR' => 10,
+        'Safari' => 11,
+        'Trident' => 12,
+        '360SE'    =>15,
+        'MSIE' => 1,
+    );
+    /**
+     * 浏览器类型
+     * @var array
+     */
     public static   $AgentInfoBroweInfo = array(  
-                'IE(MSIE)' => 1,  
-                '微信(MicroMessenger)' => 6,  
-                '火狐(Firefox)' => 2,  
-                '腾讯(QQBrowser)' => 3,  
-                '腾讯(QQ/)' => 4,  
-                'UC/支付宝(UCBrowser)' => 5,  
-                'Edge' => 7,  
-                '谷歌(Chrome)' => 8,  
-                '欧朋(Opera)' => 9,  
-                '欧朋(OPR)' => 10,  
-                '苹果(Safari)' => 11,  
-                'IE(Trident/)' => 12,
-        );
-    //操作系统
+        'IE(MSIE)' => 1,
+        '微信(MicroMessenger)' => 6,
+        '火狐(Firefox)' => 2,
+        '腾讯(MQQBrowser)' => 3,
+        '腾讯(QQ/)' => 4,
+        'UC/支付宝(UCBrowser)' => 5,
+        'Edge' => 7,
+        '谷歌(Chrome)' => 8,
+        '欧朋(Opera)' => 9,
+        '欧朋(OPR)' => 10,
+        '苹果(Safari)' => 11,
+        'IE(Trident)' => 12,
+        '傲游(Maxthon)' => 13,
+        '腾讯TT(TencentTraveler)'=>14,
+        '360SE'    =>15,
+        'SymbianOS'=>16,
+        'UCWEB'     =>17,
+    );
+    /**
+     * 操作系统
+     * @var array
+     */
     public static  $OsInfo =[
-            '其它系统'=> 0 ,//未知
-            'Windows_95'=> 1,
-            'Windows_ME'=> 2,
-            'Windows_98'=> 3, 
-            'Windows_Vista'=> 4, 
-            'Windows_7'=> 5, 
-            'Windows_8'=> 6, 
-            'Windows_XP'=> 8,
-            'Windows_2000'=> 9,  
-            'Windows_10'=> 10,
-            'Windows_32'=> 11,  
-            'Linux'=> 12,  
-            'Unix'=> 13,  
-            'SunOS'=> 14,  
-            'IBM_OS_2'=> 15,  
-            'Macintosh'=> 16,  
-            'PowerPC'=> 17,  
-            'AIX'=> 18,  
-            'HPUX'=> 19,  
-            'NetBSD'=> 20,  
-            'BSD'=> 21,  
-            'OSF1'=> 22,  
-            'IRIX'=> 23,  
-            'FreeBSD'=> 24,  
-            'teleport'=> 25,  
-            'flashget'=> 26,  
-            'webzip'=> 27,  
-            'offline'=> 28,  
-            'Android' => 29, 
-            'iPhone' => 30,
-            'ipad' => 31,
-
+        'unknown'=> 0 ,//未知
+        'Windows_95'=> 1,
+        'Windows_ME'=> 2,
+        'Windows_98'=> 3,
+        'Windows_Vista'=> 4,
+        'Windows_7'=> 5,
+        'Windows_8'=> 6,
+        'Windows_XP'=> 8,
+        'Windows_2000'=> 9,
+        'Windows_10'=> 10,
+        'Windows_32'=> 11,
+        'Linux'=> 12,
+        'Unix'=> 13,
+        'SunOS'=> 14,
+        'IBM_OS_2'=> 15,
+        'Macintosh'=> 16,
+        'PowerPC'=> 17,
+        'AIX'=> 18,
+        'HPUX'=> 19,
+        'NetBSD'=> 20,
+        'BSD'=> 21,
+        'OSF1'=> 22,
+        'IRIX'=> 23,
+        'FreeBSD'=> 24,
+        'teleport'=> 25,
+        'flashget'=> 26,
+        'webzip'=> 27,
+        'offline'=> 28,
+        'Android' => 29,
+        'iPhone' => 30,
+        'ipad' => 31,
     ];
     //操作系统
     public static  $IpInfoArr =['192.168.1.1','127.0.0.1','0.0.0.0'];
@@ -132,102 +156,75 @@ class TerminalInfo{
     const iPhone = 30;
     const iPad = 31;
     /**
-     * 获取浏览数据
+     * agent 缓存
      * @var array
      */
-    public static $ArowserInfo = [];
+    protected static $agentInfo = [];
     /**
-     * [getArowserInfo 获取浏览数据]
-     * @Effect
-     * @return [type] [description]
+     * @Author 皮泽培
+     * @Created 2019/8/14 15:53
+     * @title  获取浏览器信息
+     * @return array
+     * @throws \Exception
      */
-    public static function  getArowserInfo($type = 'arr'){
-        /**
-         * 判断是否获取过
-         */
-        if(static::$ArowserInfo && static::$singleton){
-            return static::$ArowserInfo;
-        }
-
+    public static function agentInfo():array
+    {
         $arr['Ipanel'] =self::getAgentInfo();//获取浏览器内核
-
         $arr['language'] = self::get_lang();//获取浏览器语言
-
-        $arr['Os'] = self::get_os();//获取操作系统
-        $arr['IpInfo'] = self::getIpInfo();//时时ip信息
-
-        if($arr['Os'] == 29){
+        $arr['OS'] = self::get_os();//获取操作系统
+        # 根据不同的操作系统 和平台获取根据详细的信息
+        if($arr['OS'] == 29){
             $arr['Build'] = self::getBuild();//获取安卓手机型号
-            $arr['NetType'] = self::getBuildNetType();
-        }else if($arr['Os'] == 30 || $arr['Os']==31 || $arr['Os']==16){
-            $arr['Build'] = self::getBuildIPhone($arr['Os']);
-            $arr['NetType'] = self::getBuildNetType();
+            $arr['NetworkType'] = self::getBuildNetType();
+        }else if($arr['OS'] == 30 || $arr['OS']==31 || $arr['OS']==16){
+            $arr['Build'] = self::getBuildIPhone($arr['OS']);
+            $arr['NetworkType'] = self::getBuildNetType();
         }else{
-
+            $arr['NetworkType'] = 'Ethernet';
         }
-        $arr['ip'] = static::$ip;
-        //判断返回格式
-        return static::$ArowserInfo = $type == 'arr'?$arr:json_encode($arr);
+        return $arr;
     }
 
     /**
-     * 完整的中文数据
-     * @var array
+     * @Author 皮泽培
+     * @Created 2019/8/14 15:24
+     * @param bool $simplify
+     * @title  路由标题
+     * @return array
+     * @throws \Exception
      */
-    public static $ArowserPro = [];
-    /**
-     * [getArowserPro 获取完整的中文数据]
-     * @Effect
-     * @param  string $type [description]
-     * @return [type]       [description]
-     */
-    public static function  getArowserPro($type = 'arr'){
-        /**
-         * 判断是否获取过
-         */
-        if(static::$ArowserPro && static::$singleton){
-            return static::$ArowserPro;
-        }
-        $arr['Ipanel'] =self::getAgentInfo(self::getAgentInfo());//获取浏览器内核
-
-        $arr['language'] = self::get_lang();//获取浏览器语言
-
-        $arr['Os'] =  self::get_os() ==29?self::get_os():array_search(self::get_os(),self::$OsInfo);//获取操作系统
-
-        $arr['IpInfo'] = self::getIpInfo();//ip信息相关信息
-        $get_os = self::get_os();
-        if($get_os ==29){
-            $Build = self::getBuild();
-            $count = count($Build);
-            if($count == 2){
-                /**
-                 * 0 系统 1 手机型号
-                 */
-
-                $arr['Build'] = $Build;//获取安卓手机型号
-                $arr['Os'] = $Build[0];
-
-            }else if($count == 1){
-                $arr['Os'] = $Build[0];
-            }else if($count >2){
-                $arr['Os'] = implode('|',$Build);
-                $arr['Build'] = &$Build;
+    public static function getInfo(bool $simplify=false):array
+    {
+        # 判断缓存
+        $agentMd5 = md5($_SERVER['HTTP_USER_AGENT']);
+        if (static::$redis !==null){
+            # redis 缓存
+            $agentInfo = static::$redis->get('TerminalInfo:agentInfo:'.$agentMd5);
+            if ($agentInfo){
+                $agentInfo = json_decode($agentInfo,true);
+            }else{
+                $agentInfo = static::agentInfo();
+                static::$redis->setex('TerminalInfo:agentInfo:'.$agentMd5,60*60*static::$period,json_encode($agentInfo));
             }
-            $arr['NetType'] = self::getBuildNetType();
-        }else if($get_os == 30 || $get_os==31 || $get_os==16){
-            $Build = self::getBuildIPhone($get_os);
-            $arr['Build'] = $Build;
-            $arr['NetType'] = self::getBuildNetType();
         }else{
-            $arr['Os'] = array_search(self::get_os(),self::$OsInfo);//获取操作系统
-            $arr['NetType'] = 'Ethernet';
+            #static 缓存
+            if (isset(static::$agentInfo[$agentMd5]))
+            {
+                $agentInfo  = static::$agentInfo[$agentMd5];
+            }else{
+                static::$agentInfo[$agentMd5] = static::agentInfo();
+                $agentInfo = static::$agentInfo[$agentMd5];
+            }
         }
-
-        $arr['ip'] = static::$ip;
-        //判断返回格式
-        return static::$ArowserPro = $type == 'arr'?$arr:json_encode($arr);
+        $agentInfo['IpInfo'] = self::getIpInfo();//ip信息  有自己的缓存处理
+        $agentInfo['IP'] = static::$ip;
+        if ($simplify){
+            # 替换为中文
+            $agentInfo['Ipanel'] = self::getAgentInfo($agentInfo['Ipanel']);//获取浏览器内核
+            $agentInfo['OS'] =  $agentInfo['OS'] ==29?$agentInfo['OS']:array_search($agentInfo['OS'],self::$OsInfo);//获取操作系统
+        }
+        return $agentInfo;
     }
-
     /**
      * [getAgentInfo 获取浏览器内核]
      * @Effect
@@ -238,8 +235,8 @@ class TerminalInfo{
         //如果没有存入 浏览器内核 值 就是获取浏览器内核 值
         if(!$Data){
             $agent = $_SERVER['HTTP_USER_AGENT'];  
-            $browser_num = 0;//未知  
-            foreach(self::$AgentInfoBrower as $bro => $val){  
+            $browser_num = 0;//未知
+            foreach(self::$AgentInfoBrower as $bro => $val){
                 if(stripos($agent, $bro) !== false){
                     $Versions = self::getBuildIMicroVersions($bro);
                     $browser_num = $val;
@@ -253,7 +250,6 @@ class TerminalInfo{
         $Data['name'] = array_search($Data['name'],self::$AgentInfoBroweInfo);
         return $Data;
     }
-
     /**
      * 获得访问者浏览器语言
      * @return bool|string
@@ -423,7 +419,6 @@ class TerminalInfo{
         }
         return $os;
     }  
-
     /**
      * [get_os_show 获取文字标识系统显示]
      * @param  [type] $id [id]
@@ -440,13 +435,18 @@ class TerminalInfo{
      */
     public static function getBuild(){
         $agent = $_SERVER['HTTP_USER_AGENT'];
-        if(!preg_match("/; (.*) Build\//i",$agent,$arrt)){
-            if(!preg_match("/\(linux; (.*)\) Apple/i",$agent,$arrt)){
-                return '未知型号';
-            }
+        if(preg_match("/U; (.*) Build\//i",$agent,$arrt)){
+
+        }else if (preg_match("/; (.*) Build\//i",$agent,$arrt)){
+
+        }else if (preg_match("/\(linux; (.*)\) Apple/i",$agent,$arrt)){
+
+        }else if (preg_match("/Android (.*); Linux/i",$agent,$arrt))
+        {
+            return explode('; ',$arrt[0]);
         }
         if(!isset($arrt[1]) && empty($arrt[1])){
-            return ['未知型号数据'];
+            return ['unknown'];
         }
         return explode('; ',$arrt[1]);
     }
@@ -459,6 +459,11 @@ class TerminalInfo{
         $agent = $_SERVER['HTTP_USER_AGENT'];
         if ($code == 16){
             if(preg_match("/Macintosh; U; (.*);/i",$agent,$arrt)){
+
+                if(!empty($arrt[1])){
+                    list($name,$versions) = explode(' OS X ',$arrt[1]);
+                }
+            }else if(preg_match("/Macintosh; (.*)\) AppleWebKit/i",$agent,$arrt)){
                 if(!empty($arrt[1])){
                     list($name,$versions) = explode(' OS X ',$arrt[1]);
                 }
@@ -476,6 +481,8 @@ class TerminalInfo{
                     $versions= $arrt[1];
                 }
             }
+        }else{
+            $name = array_search(self::get_os(),self::$OsInfo);
         }
         return ['name'=>$name??'','versions'=>$versions??''];
     }
@@ -487,8 +494,14 @@ class TerminalInfo{
         'Chrome'=>'Chrome\/',
         'MSIE'=>'MSIE ',
         'Safari'=>'Safari\/',
+        'Opera'=>'Presto\/',
+        'Maxthon'=>'Maxthon ',
+        'TencentTraveler'=>'TencentTraveler ',
+        '360SE'         =>'360SE',
+        'SymbianOS'  =>'SymbianOS\/',
+        'UCBrowser' =>'UCBrowser\/',
+        'Firefox'   =>'Firefox\/',
     ];
-
     /**
      * @Author 皮泽培
      * @Created 2019/8/5 15:15
@@ -498,34 +511,42 @@ class TerminalInfo{
      */
     public static function getBuildIMicroVersions($type='MSIE')
     {
+
         if (isset(self::MicroVersions[$type])){
             $type = self::MicroVersions[$type];
         }
-        $blank = ['MSIE '];
+        $blank = ['MSIE ','Maxthon ','TencentTraveler '];
+        $not = ['UCWEB'];
         if (preg_match("/$type([\d\.]+)/i",$_SERVER['HTTP_USER_AGENT'],$arr)){
             if (in_array($type,$blank)){
                 list($name,$versions) = explode(' ',$arr[0]);
+            }elseif(in_array($type,$not)){
+                $name = $type;
+                $versions = $arr[1];
             }else{
                 list($name,$versions) = explode('/',$arr[0]);
             }
-            return ['name'=>$name,'versions'=>$versions];
         }
-        return null;
+        return ['name'=>$name??$type??'','versions'=>$versions??''];
     }
     /**
      * 获取移动设备的网络
      * @return string
      */
     public static function getBuildNetType(){
-        // $agent = 'Mozilla/5.0 (Linux; Android 7.1.1; ONEPLUS A5010 Build/NMF26X; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/043906 Mobile Safari/537.36 MicroMessenger/6.6.3.1260(0x26060339) NetType/WIFI Language/zh_CN'; 
-        $agent = $_SERVER['HTTP_USER_AGENT'];  
-
+        $agent = $_SERVER['HTTP_USER_AGENT'];
         // NetType/WIFI Language
         if(!preg_match("/ NetType\/(.*) Language/i",$agent,$arrt)){
-            return '未知网络';
+            return 'unknown';
         }
-        return $arrt[1];
+        return $arrt[1]??'unknown';
     }
+
+    /**
+     * ip信息缓存
+     * @var array
+     */
+    protected static $IpInfo = [];
     /**
      * [getIpInfo 分析获取ip数据]
      * @Effect
@@ -542,6 +563,17 @@ class TerminalInfo{
             }
         }
         static::$ip = $value;
+        if (static::$redis !== null){
+            $data = static::$redis->get('TerminalInfo:ipInfo:'.$value);
+            if ($data){
+                return json_decode($data,true);
+            }
+        }else{
+            if (isset(static::$IpInfo[$value]))
+            {
+                return static::$IpInfo[$value];
+            }
+        }
         /**
          * 判断是否有文件配置
          */
@@ -549,15 +581,19 @@ class TerminalInfo{
             static::$pattern = \Config::TERMINAL_INFO_PATTERN;
         }
         if(static::$pattern =='high'){
-            return static::getIpInfoHigh($value);
-
+            $data =  static::getIpInfoHigh($value);
         }elseif (static::$pattern =='precision'){
-
-            return static::getIpInfoPrecision($value);
-
+            $data =  static::getIpInfoPrecision($value);
         }elseif (static::$pattern =='mixture'){
-            return static::getIpInfoMixture($value);
+            $data =  static::getIpInfoMixture($value);
         }
+        # 缓存结果
+        if ($data && static::$redis !== null){
+            static::$redis->setex('TerminalInfo:ipInfo:'.$value,60*60*static::$period,json_encode($data));
+        }else{
+            static::$IpInfo[$value] = $data;
+        }
+        return $data;
     }
     /**
      *  high[高性能只使用本地qqwry.dat数据]
@@ -596,25 +632,16 @@ class TerminalInfo{
          * 获取qqwry数据
          */
         if($QqIp = self::getQqIp($value)){
-            /**
-             * 判断是否是移动网络
-             */
+            # 判断是否是移动网络
             $QqIp['NetworkType'] = 'WiFi';
             if(strstr($QqIp['isp'],'数据上网')){
-                /**
-                 * 是移动网络
-                 */
+                # 是移动网络
                 $QqIp['NetworkType'] = 'Cellular';
                 $QqIp['isp'] = strstr($QqIp['isp'],'数据上网',true);
             }
-            $arr['QqIp']= &$QqIp;
             $BdIp = self::getBdIp($value);
             if( $BdIp && $QqIp){
-                $arr['BdIp']= &$BdIp;
-                /**
-                 * 优先级 默认 $QqIp < $BdIp
-                 * 注意：百度获取的城市比较准确、但是没有区分数据网络和宽带网络，也没有运营商数据
-                 */
+                # 优先级 默认 $QqIp < $BdIp  注意：百度获取的城市比较准确、但是没有区分数据网络和宽带网络，也没有运营商数据
                 return array_merge($QqIp,$BdIp);
             }
             return $QqIp;
@@ -633,7 +660,6 @@ class TerminalInfo{
     {
         return null;
     }
-
     /**
      * qqwry ip接口
      * @param $value
@@ -647,7 +673,6 @@ class TerminalInfo{
         $qqwryData['isp'] = $qqwry['area'];
         return $qqwryData;
     }
-
     /**
      * [getTbIp 淘宝ip接口]
      * @Effect
@@ -658,13 +683,10 @@ class TerminalInfo{
     {
         //淘宝接口
         // $url = 'https://ip.taobao.com/service/getIpInfo.php?ip='.$value;
-
         $url = 'http://ip.taobao.com/service/getIpInfo.php?ip='.$value;
-        
         //返回数据格式
         //{"code":0,"data":{"ip":"121.34.35.220","country":"中国","area":"","region":"广东","city":"深圳","county":"XX","isp":"电信","country_id":"CN","area_id":"","region_id":"440000","city_id":"440300","county_id":"xx","isp_id":"100017"}}
         $Data = json_decode(self::http_request($url),true);
-
         if($Data['code'] != 0){
            return  false;
         }
@@ -676,7 +698,6 @@ class TerminalInfo{
         $reData['isp'] = $Data['isp'];//服务商
         if(!empty($Data['area'])){$reData['district'] = $Data['area'];}//区域
         if($Data['county']!= 'XX'){$reData['county'] = $Data['county'];}//县
-
         return $reData;
     }
     /**
@@ -696,24 +717,20 @@ class TerminalInfo{
         $reData['country'] = $Data['country'];//国家
         $reData['province'] = $Data['province'];//省
         if($Data['city'] != ''){$reData['city'] = $Data['city'];}//城市
-
         //区域
         if(!empty($Data['district'])){$reData['district'] = $Data['district'];}
         //服务商
         // if(!empty($Data['isp'])){$reData['isp'] = $Data['isp'];}
         return $reData;
     }
-
     /**
-     *
+     * ipip
      * https://freeapi.ipip.net/
      */
     public static function ipipnet($value)
     {
-
         $url = 'https://freeapi.ipip.net/'.$value;
         $Data = json_decode(self::http_request($url),true);
-
         if($Data){
             $reData['country'] = $Data[0];//国家
             $reData['province'] = $Data[1];//省
@@ -721,7 +738,6 @@ class TerminalInfo{
             $reData['isp'] = $Data['4'];//服务商
         }
         return false;
-
     }
 
     /**
@@ -739,15 +755,13 @@ class TerminalInfo{
          * 获取配置
          */
         if(!static::$BdApiKey){ static::$BdApiKey = \Config::TERMINAL_INFO_API_CONFIG['BaiduIp']['Key'];}
-
         $url = 'https://api.map.baidu.com/location/ip?ip='.$value.'&ak='.self::$BdApiKey.'&coor=bd09ll';
-
         $Data = json_decode(self::http_request($url),true);
         if(!$Data){
            return  false;
         }
         if($Data['status'] !=0){
-            throw new \Exception(json_encode($Data));
+//            throw new \Exception(json_encode($Data));
             return  false;
         }
         $reData['address'] = $Data['address']??'';
@@ -757,7 +771,6 @@ class TerminalInfo{
         //处理数据
         $reData['province'] = $Data['province'];//省
         if($Data['city'] != ''){$reData['city'] = $Data['city'];}//城市
-
         //区域
         if(!empty($Data['district'])){$reData['district'] = $Data['district'];}
         return $reData;
@@ -801,9 +814,6 @@ class TerminalInfo{
                 }
             }
         }
-
-
-
         return $realip;
     }  
     /**
@@ -894,7 +904,6 @@ class TerminalInfo{
                     }else{
                         $city = $position[1];//没有，就把空格剩余的字段赋值给城市
                     }
-
                 } else {
                     $province = $position;
                     $city = $position;
@@ -932,5 +941,4 @@ class TerminalInfo{
     public static function CharToArr($str){  
          return preg_split('/(?<!^)(?!$)/u', $str );  
     } 
-
 }
