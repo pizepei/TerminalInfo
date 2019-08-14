@@ -1,7 +1,7 @@
 # TerminalInfo
 一个简单的分析WEB客户端信息的类
 ## 此项目期望通过简单的方法获取WEB客户端一下信息：
-+ 1、通过HTTP_USER_AGENT信息获取客户端的语言、客户端类型、客户端操作系统、HTTP_ACCEPT_LANGUAGE
++ 1、通过HTTP_USER_AGENT信息获取客户端的语言（HTTP_ACCEPT_LANGUAGE）、客户端类型、客户端操作系统（PC、IOS、Android以及版本号）、IOS系统版本、微信版本、浏览器内核版本
 + 2、通过HTTP_ACCEPT_LANGUAGE信息获取客户端类型、客户端操作系统、网络类型等信息。
 + 3、通过搜集的IP信息查询API综合分析客户端所在国家、省、城市信息。
 + 4、通过搜集的IP信息、客户端信息综合分析客户端的网络状态。
