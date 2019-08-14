@@ -35,6 +35,10 @@ class TerminalInfo{
      */
     public static $ip ='';
     /**
+     * @var mixed
+     */
+    public static $USER_AGENT = null;
+    /**
      * 浏览器类型
      * @var array
      */
@@ -56,6 +60,7 @@ class TerminalInfo{
         'Trident' => 12,
         '360SE'    =>15,
         'MSIE' => 1,
+        'PostmanRuntime'=>18,
     );
     /**
      * 浏览器类型
@@ -79,6 +84,8 @@ class TerminalInfo{
         '360SE'    =>15,
         'SymbianOS'=>16,
         'UCWEB'     =>17,
+        'Postman'=>18,
+
     );
     /**
      * 操作系统
@@ -188,7 +195,7 @@ class TerminalInfo{
     /**
      * @Author 皮泽培
      * @Created 2019/8/14 15:24
-     * @param bool $simplify
+     * @param bool $simplify 是否获取全中文
      * @title  路由标题
      * @return array
      * @throws \Exception
@@ -196,7 +203,7 @@ class TerminalInfo{
     public static function getInfo(bool $simplify=false):array
     {
         # 判断缓存
-        $agentMd5 = md5($_SERVER['HTTP_USER_AGENT']);
+        $agentMd5 = md5(static::$USER_AGENT?static::$USER_AGENT:$_SERVER['HTTP_USER_AGENT']);
         if (static::$redis !==null){
             # redis 缓存
             $agentInfo = static::$redis->get('TerminalInfo:agentInfo:'.$agentMd5);
@@ -221,7 +228,7 @@ class TerminalInfo{
         if ($simplify){
             # 替换为中文
             $agentInfo['Ipanel'] = self::getAgentInfo($agentInfo['Ipanel']);//获取浏览器内核
-            $agentInfo['OS'] =  $agentInfo['OS'] ==29?$agentInfo['OS']:array_search($agentInfo['OS'],self::$OsInfo);//获取操作系统
+            $agentInfo['OS'] =  array_search($agentInfo['OS'],self::$OsInfo);//获取操作系统
         }
         return $agentInfo;
     }
@@ -234,7 +241,7 @@ class TerminalInfo{
     public static function getAgentInfo($Data = false){
         //如果没有存入 浏览器内核 值 就是获取浏览器内核 值
         if(!$Data){
-            $agent = $_SERVER['HTTP_USER_AGENT'];  
+            $agent = static::$USER_AGENT?static::$USER_AGENT:$_SERVER['HTTP_USER_AGENT'];
             $browser_num = 0;//未知
             foreach(self::$AgentInfoBrower as $bro => $val){
                 if(stripos($agent, $bro) !== false){
@@ -243,7 +250,7 @@ class TerminalInfo{
                     break;  
                 }
             }
-            $Data = ['name'=>$browser_num,'versions'=>$Versions['versions']];
+            $Data = ['name'=>$browser_num,'versions'=>$Versions['versions']??false];
             return  $Data;
         }
         //存入就是获取 文字浏览器内核名称
@@ -291,7 +298,7 @@ class TerminalInfo{
      * @return [type] [description]
      */
     public static function get_os(){  
-        $agent = $_SERVER['HTTP_USER_AGENT'];
+        $agent = static::$USER_AGENT?static::$USER_AGENT:$_SERVER['HTTP_USER_AGENT'];
         $os = false;  
         if (preg_match('/win/i', $agent) && strpos($agent, '95'))  
         {  
@@ -434,7 +441,7 @@ class TerminalInfo{
      * @return [type] [description] 0 系统  1 手机型号
      */
     public static function getBuild(){
-        $agent = $_SERVER['HTTP_USER_AGENT'];
+        $agent = static::$USER_AGENT?static::$USER_AGENT:$_SERVER['HTTP_USER_AGENT'];
         if(preg_match("/U; (.*) Build\//i",$agent,$arrt)){
 
         }else if (preg_match("/; (.*) Build\//i",$agent,$arrt)){
@@ -456,7 +463,7 @@ class TerminalInfo{
      * @return [type] [description]
      */
     public static function getBuildIPhone($code=30){
-        $agent = $_SERVER['HTTP_USER_AGENT'];
+        $agent = static::$USER_AGENT?static::$USER_AGENT:$_SERVER['HTTP_USER_AGENT'];
         if ($code == 16){
             if(preg_match("/Macintosh; U; (.*);/i",$agent,$arrt)){
 
@@ -501,6 +508,7 @@ class TerminalInfo{
         'SymbianOS'  =>'SymbianOS\/',
         'UCBrowser' =>'UCBrowser\/',
         'Firefox'   =>'Firefox\/',
+        'PostmanRuntime'=>'PostmanRuntime\/',
     ];
     /**
      * @Author 皮泽培
@@ -517,7 +525,7 @@ class TerminalInfo{
         }
         $blank = ['MSIE ','Maxthon ','TencentTraveler '];
         $not = ['UCWEB'];
-        if (preg_match("/$type([\d\.]+)/i",$_SERVER['HTTP_USER_AGENT'],$arr)){
+        if (preg_match("/$type([\d\.]+)/i",static::$USER_AGENT?static::$USER_AGENT:$_SERVER['HTTP_USER_AGENT'],$arr)){
             if (in_array($type,$blank)){
                 list($name,$versions) = explode(' ',$arr[0]);
             }elseif(in_array($type,$not)){
@@ -534,9 +542,8 @@ class TerminalInfo{
      * @return string
      */
     public static function getBuildNetType(){
-        $agent = $_SERVER['HTTP_USER_AGENT'];
         // NetType/WIFI Language
-        if(!preg_match("/ NetType\/(.*) Language/i",$agent,$arrt)){
+        if(!preg_match("/ NetType\/(.*) Language/i",static::$USER_AGENT?static::$USER_AGENT:$_SERVER['HTTP_USER_AGENT'],$arrt)){
             return 'unknown';
         }
         return $arrt[1]??'unknown';
