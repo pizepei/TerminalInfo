@@ -35,9 +35,15 @@ class TerminalInfo{
      */
     public static $ip ='';
     /**
+     * $_SERVER['HTTP_USER_AGENT'];
      * @var mixed
      */
     public static $USER_AGENT = null;
+    /**
+     * $_SERVER['HTTP_ACCEPT_LANGUAGE']
+     * @var null
+     */
+    public static $LANGUAGE = null;
     /**
      * 浏览器类型
      * @var array
@@ -177,7 +183,6 @@ class TerminalInfo{
     public static function agentInfo():array
     {
         $arr['Ipanel'] =self::getAgentInfo();//获取浏览器内核
-        $arr['language'] = self::get_lang();//获取浏览器语言
         $arr['OS'] = self::get_os();//获取操作系统
         # 根据不同的操作系统 和平台获取根据详细的信息
         if($arr['OS'] == 29){
@@ -225,6 +230,7 @@ class TerminalInfo{
         }
         $agentInfo['IpInfo'] = self::getIpInfo();//ip信息  有自己的缓存处理
         $agentInfo['IP'] = static::$ip;
+        $agentInfo['language'] = self::get_lang();//获取浏览器语言
         if ($simplify){
             # 替换为中文
             $agentInfo['Ipanel'] = self::getAgentInfo($agentInfo['Ipanel']);//获取浏览器内核
@@ -239,7 +245,7 @@ class TerminalInfo{
      * @return [type]        [description]
      */
     public static function getAgentInfo($Data = false){
-        //如果没有存入 浏览器内核 值 就是获取浏览器内核 值
+        ##如果没有存入 浏览器内核 值 就是获取浏览器内核 值
         if(!$Data){
             $agent = static::$USER_AGENT?static::$USER_AGENT:$_SERVER['HTTP_USER_AGENT'];
             $browser_num = 0;//未知
@@ -262,35 +268,41 @@ class TerminalInfo{
      * @return bool|string
      */
     public static function get_lang() {
-        if (!empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-            //只取前4位，这样只判断最优先的语言。如果取前5位，可能出现en,zh的情况，影响判断。  
-            $lang = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
-            $lang = substr($lang, 0, 5);
-            if (preg_match("/zh-c/i", $lang))  
-            $lang = "简体中文";  
-            else if (preg_match("/zh/i", $lang))  
-            $lang = "繁體中文";  
-            else if (preg_match("/en/i", $lang))  
-            $lang = "English";  
-            else if (preg_match("/fr/i", $lang))  
-            $lang = "French";  
-            else if (preg_match("/de/i", $lang))  
-            $lang = "German";  
-            else if (preg_match("/jp/i", $lang))  
-            $lang = "Japanese";  
-            else if (preg_match("/ko/i", $lang))  
-            $lang = "Korean";  
-            else if (preg_match("/es/i", $lang))  
-            $lang = "Spanish";  
-            else if (preg_match("/sv/i", $lang))  
-            $lang = "Swedish";  
-            else
-            $lang = "else";  
-
-            return $lang;
-        } else {
-            return 'unknow';
+        if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])){
+            if (static::$LANGUAGE){
+                $lang = static::$LANGUAGE;
+            }else{
+                $lang = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+            }
+        }else if (static::$LANGUAGE){
+            $lang = static::$LANGUAGE;
         }
+        if (isset($lang)){
+            # 只取前4位，这样只判断最优先的语言。如果取前5位，可能出现en,zh的情况，影响判断。
+            $lang = substr($lang, 0, 5);
+            if (preg_match("/zh-c/i", $lang))
+                $lang = "简体中文";
+            else if (preg_match("/zh/i", $lang))
+                $lang = "繁體中文";
+            else if (preg_match("/en/i", $lang))
+                $lang = "English";
+            else if (preg_match("/fr/i", $lang))
+                $lang = "French";
+            else if (preg_match("/de/i", $lang))
+                $lang = "German";
+            else if (preg_match("/jp/i", $lang))
+                $lang = "Japanese";
+            else if (preg_match("/ko/i", $lang))
+                $lang = "Korean";
+            else if (preg_match("/es/i", $lang))
+                $lang = "Spanish";
+            else if (preg_match("/sv/i", $lang))
+                $lang = "Swedish";
+            else
+                $lang = "else";
+            return $lang;
+        }
+        return 'unknown';
     }
     /**
      * [get_os 获取客户端操作系统信息包括]

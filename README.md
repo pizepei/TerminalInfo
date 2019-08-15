@@ -7,12 +7,17 @@
 + 4、通过搜集的IP信息、客户端信息综合分析客户端的网络状态。
 # 使用方法：
 * 简单的使用方法
+ ~~~
+ 使用composer安装
+    composer require pizepei/terminal-info
+ ~~~
 
  ~~~
     * redis使用缓存结果避免重复获取ip和浏览器信息
         terminalInfo::$redis= $Redis;   #$Redis为Redis实例  非必须如果不设置属性默认中缓存当前请求生命周期内的ip与浏览器信息
         terminalInfo::$period = 24;     #redis缓存有效期单位小时  默认24小时
         terminalInfo::$USER_AGENT;      #非必须如果不设置此属性 默认获取当前请求的$_SERVER['HTTP_USER_AGENT']
+        terminalInfo::$LANGUAGE;        #语音获取，非必须如果不设置此属性 默认获取当前请求的$_SERVER['HTTP_ACCEPT_LANGUAGE']
         terminalInfo::getInfo(true);    # 当参数为 true 时获取全文字信息方便展示  false 时获取的是int数值代替的内容方便存储数据库
         * 返回信息如下
         {
