@@ -10,10 +10,35 @@ namespace pizepei\terminalInfo;
 use pizepei\terminalInfo\ToLocation;
 class TerminalInfo{
     /**
-     * 模式  high[高性能只使用本地qqwry.dat数据]  precision[高精度 使用qqwry.dat+百度接口 可匹配出是否是手机网络 在手机网络下可匹配到城市] mixture[precision + mysql数据库 如果mysql中没有数据 使用precision获取数据 插入mysq中 ，如果mysql有数据匹配 不同就更新覆盖]
+     * 模式  high[高性能只使用本地qqwry.dat数据]  precision[高精度 使用qqwry.dat+百度接口+高德地图 可匹配出是否是手机网络 在手机网络下可匹配到城市] mixture[precision + mysql数据库 如果mysql中没有数据 使用precision获取数据 插入mysq中 ，如果mysql有数据匹配 不同就更新覆盖]
      * @var array
      */
-    protected static $pattern = null;
+    public static $pattern = 'high';
+    /**
+     * direct 直连   cdn 官方cnd   代理 agency
+     * @var string
+     */
+    public static $ipPattern = 'direct';
+    /**
+     * 第三方api接口配置
+     * @var array
+     */
+    public static $apiConfig = [
+        'BaiduIp' =>[ # 百度地图ip地址查询接口配置 接口申请地址http://lbsyun.baidu.com/
+            'url'=>'',
+            'Key'=>'',
+        ],
+        'AmapIp'=>[  # 高德地图 api配置  接口申请地址https://lbs.amap.com
+            'url'=>'',
+            'Key'=>'',
+        ]
+    ];
+    /**
+     * 用来简单判断是否是真人ip
+     */
+    const ISP = [
+        '中移铁通', '中移铁通','联通','移动','南平中国移动','电信'
+    ];
     /**
      * redis 对象
      * @var \Redis
@@ -45,9 +70,20 @@ class TerminalInfo{
      */
     public static $LANGUAGE = null;
     /**
+     * 是否抛异常（只针对请求外部api接口时的数据异常问题）
+     * @var bool
+     */
+    public static $exception = false;
+    /**
+     * ip信息缓存
+     * @var array
+     */
+    protected static $IpInfo = [];
+    /**
      * 浏览器类型
      * @var array
      */
+
     public static  $AgentInfoBrower = array(
         'SymbianOS'=>16,
         'MicroMessenger' => 6,
@@ -237,6 +273,26 @@ class TerminalInfo{
             $agentInfo['OS'] =  array_search($agentInfo['OS'],self::$OsInfo);//获取操作系统
         }
         return $agentInfo;
+    }
+
+
+    /**
+     * @Author 皮泽培
+     * @Created 2019/8/14 15:24
+     * @param string $all all 全部   ip  agent
+     * @title  清空对应的数据缓存
+     * @return array
+     * @throws \Exception
+     */
+    public static function delCache(string $all='all')
+    {
+        if (static::$redis !==null){
+            if ($all='all' ||$all='ip' ){static::$redis->del(static::$redis->keys('TerminalInfo:ipInfo:*'));}
+            if ($all='all' ||$all='agent' ){static::$redis->del(static::$redis->keys('TerminalInfo:agentInfo:*'));}
+        }else{
+            if ($all='all' ||$all='ip' ){static::$IpInfo = [];}
+            if ($all='all' ||$all='agent' ){static::$agentInfo = [];}
+        }
     }
     /**
      * [getAgentInfo 获取浏览器内核]
@@ -561,11 +617,7 @@ class TerminalInfo{
         return $arrt[1]??'unknown';
     }
 
-    /**
-     * ip信息缓存
-     * @var array
-     */
-    protected static $IpInfo = [];
+
     /**
      * [getIpInfo 分析获取ip数据]
      * @Effect
@@ -596,13 +648,10 @@ class TerminalInfo{
         /**
          * 判断是否有文件配置
          */
-        if(!static::$pattern){
-            static::$pattern = \Config::TERMINAL_INFO_PATTERN;
-        }
         if(static::$pattern =='high'){
-            $data =  static::getIpInfoHigh($value);
+            $data =  static::getIpInfoHigh($value);#只使用本地纯真ip地址数据库
         }elseif (static::$pattern =='precision'){
-            $data =  static::getIpInfoPrecision($value);
+            $data =  static::getIpInfoPrecision($value);# 使用可能的资源整合数据
         }elseif (static::$pattern =='mixture'){
             $data =  static::getIpInfoMixture($value);
         }
@@ -659,17 +708,22 @@ class TerminalInfo{
                 $QqIp['isp'] = strstr($QqIp['isp'],'数据上网',true);
             }
             $BdIp = self::getBdIp($value);
-            if( $BdIp && $QqIp){
-                # 优先级 默认 $QqIp < $BdIp  注意：百度获取的城市比较准确、但是没有区分数据网络和宽带网络，也没有运营商数据
-                return array_merge($QqIp,$BdIp);
+            $getAmapIp = self::getAmapIp($value);
+            # 优先级 默认 $QqIp > $BdIp >$getAmapIp  注意：百度获取的城市比较准确、但是没有区分数据网络和宽带网络，也没有运营商数据
+            if($getAmapIp){
+                $QqIp = array_merge($QqIp,$getAmapIp);
+            }
+            if($BdIp){
+                $QqIp = array_merge($QqIp,$BdIp);
             }
             return $QqIp;
         }else if ($BdIp = self::getBdIp($value)){
             return $BdIp;
+        }elseif ($getAmapIp = self::getAmapIp($value)){
+            return $getAmapIp;
         }else{
             return null;
         }
-
     }
     /**
      * mixture[precision + mysql数据库 如果mysql中没有数据 使用precision获取数据 插入mysq中 ，如果mysql有数据匹配 不同就更新覆盖]
@@ -679,8 +733,9 @@ class TerminalInfo{
     {
         return null;
     }
+
     /**
-     * qqwry ip接口
+     * qqwryIP 地址数据库 支持官网IP信息、支持IDC机房IP信息查询
      * @param $value
      * @return mixed
      */
@@ -690,73 +745,15 @@ class TerminalInfo{
         $qqwry = $ToLocation->getlocation($value);
         $qqwryData = static::ipToLocation($qqwry['country']);
         $qqwryData['isp'] = $qqwry['area'];
+        # 判断是否是真人（非国内主流电信运营商）
+        if (!empty($qqwryData['isp'])){
+            if (in_array($qqwryData['isp'],self::ISP)){
+                $qqwryData['human'] = 'yes';
+            }else{
+                $qqwryData['human'] = 'no';
+            }
+        }
         return $qqwryData;
-    }
-    /**
-     * [getTbIp 淘宝ip接口]
-     * @Effect
-     * @param  [type] $value [description]
-     * @return [type]        [description]
-     */
-    public static function getTbIp($value)
-    {
-        //淘宝接口
-        // $url = 'https://ip.taobao.com/service/getIpInfo.php?ip='.$value;
-        $url = 'http://ip.taobao.com/service/getIpInfo.php?ip='.$value;
-        //返回数据格式
-        //{"code":0,"data":{"ip":"121.34.35.220","country":"中国","area":"","region":"广东","city":"深圳","county":"XX","isp":"电信","country_id":"CN","area_id":"","region_id":"440000","city_id":"440300","county_id":"xx","isp_id":"100017"}}
-        $Data = json_decode(self::http_request($url),true);
-        if($Data['code'] != 0){
-           return  false;
-        }
-        //处理数据
-        $Data = $Data['data'];
-        $reData['country'] = $Data['country'];//国家
-        $reData['province'] = $Data['region'];//省
-        if($Data['city'] != 'XX' && $Data['city'] !=''){ $reData['city'] = $Data['city'];}//城市
-        $reData['isp'] = $Data['isp'];//服务商
-        if(!empty($Data['area'])){$reData['district'] = $Data['area'];}//区域
-        if($Data['county']!= 'XX'){$reData['county'] = $Data['county'];}//县
-        return $reData;
-    }
-    /**
-     * [getSgIp 新浪IP接口] 好像不能用
-     * @Effect
-     * @param  [type] $value [description]
-     * @return [type]        [description]
-     */
-    public static function getXlIp($value)
-    {
-        $url = 'https://int.dpool.sina.com.cn/iplookup/iplookup.php?format=json&ip='.$value;
-        $Data = json_decode(self::http_request($url),true);
-        if(!$Data){
-           return  false;
-        }
-        //处理数据
-        $reData['country'] = $Data['country'];//国家
-        $reData['province'] = $Data['province'];//省
-        if($Data['city'] != ''){$reData['city'] = $Data['city'];}//城市
-        //区域
-        if(!empty($Data['district'])){$reData['district'] = $Data['district'];}
-        //服务商
-        // if(!empty($Data['isp'])){$reData['isp'] = $Data['isp'];}
-        return $reData;
-    }
-    /**
-     * ipip
-     * https://freeapi.ipip.net/
-     */
-    public static function ipipnet($value)
-    {
-        $url = 'https://freeapi.ipip.net/'.$value;
-        $Data = json_decode(self::http_request($url),true);
-        if($Data){
-            $reData['country'] = $Data[0];//国家
-            $reData['province'] = $Data[1];//省
-            $reData['city'] = $Data[2];//城市
-            $reData['isp'] = $Data['4'];//服务商
-        }
-        return false;
     }
 
     /**
@@ -766,35 +763,69 @@ class TerminalInfo{
      * @return bool
      * @throws \Exception
      * @title  [getBdIp 百度接口]
-     * @explain 一般是方法功能说明、逻辑说明、注意事项等。
+     * @explain 无法获取IDC机房ip信息
      */
     public static function getBdIp($value)
     {
-        /**
-         * 获取配置
-         */
-        if(!static::$BdApiKey){ static::$BdApiKey = \Config::TERMINAL_INFO_API_CONFIG['BaiduIp']['Key'];}
-        $url = 'https://api.map.baidu.com/location/ip?ip='.$value.'&ak='.self::$BdApiKey.'&coor=bd09ll';
+        # 获取配置
+        if (!isset(static::$apiConfig['BaiduIp']['Key']) || empty(static::$apiConfig['BaiduIp']['Key'])){
+            return false;
+        }
+        $url = 'https://api.map.baidu.com/location/ip?ip='.$value.'&ak='.static::$apiConfig['BaiduIp']['Key'].'&coor=bd09ll';
         $Data = json_decode(self::http_request($url),true);
         if(!$Data){
            return  false;
         }
         if($Data['status'] !=0){
-//            throw new \Exception(json_encode($Data));
+            if (static::$exception){
+               throw new \Exception(json_encode($Data));
+            }
             return  false;
         }
-        $reData['address'] = $Data['address']??'';
-        $reData['street_number'] = $Data['street_number']??'';
-        $reData['point'] =  $Data['content']['point'];
-        $Data = $Data['content']['address_detail'];
-        //处理数据
-        $reData['province'] = $Data['province'];//省
-        if($Data['city'] != ''){$reData['city'] = $Data['city'];}//城市
-        //区域
-        if(!empty($Data['district'])){$reData['district'] = $Data['district'];}
+        if (!isset($Data['content']) && empty($Data['content'])){ return false;}
+
+        $address_detail = $Data['content']['address_detail'];
+
+        if (!empty($Data['address'])) {$reData['address'] = $Data['address'];}# 详细地址     CN|北京|北京|None|CHINANET|1|None
+        if (!empty($address_detail['street_number'])) {$reData['street_number'] = $address_detail['street_number'];}# 门牌号
+        if (!empty($Data['content']['point'])) {$reData['point'] = $Data['content']['point'];}#   当前城市中心点
+        if (!empty($address_detail['street'])) {$reData['street'] = $address_detail['street'];}# 街道
+        if (!empty($address_detail['city_code'])) {$reData['city_code'] = $address_detail['city_code'];}# 街道
+        if (!empty($address_detail['province'])) {$reData['province'] = $address_detail['province'];}# 省
         return $reData;
     }
 
+    /**
+     * @Author: pizepei
+     * @Created: 2018/12/2 22:52
+     * @param $value
+     * @return bool
+     * @throws \Exception
+     * @title  高德地图api
+     * @explain 特别注意本api只能获取国内ip 不能获取IDC机房ip详细
+     */
+    public static function getAmapIp($value)
+    {
+        # 获取配置
+        if (!isset(static::$apiConfig['AmapIp']['Key']) || empty(static::$apiConfig['AmapIp']['Key'])){
+            return false;
+        }
+        $url = 'https://restapi.amap.com/v3/ip?key='.static::$apiConfig['AmapIp']['Key'].'&output=json&ip='.$value;
+        $Data = json_decode(self::http_request($url),true);
+        if(!$Data){
+            return  false;
+        }
+        if($Data['status'] !=1){
+            if (static::$exception){
+                throw new \Exception(json_encode($Data));
+            }
+            return  false;
+        }
+        if (!empty($Data['province'])) {$reData['province'] = $Data['province'];}# 省
+        if (!empty($Data['city'])) {$reData['city'] = $Data['city'];}# 市
+        if (!empty($Data['adcode'])) {$reData['city_code'] = $Data['adcode'];}# 区域代码
+        return $reData;
+    }
     /**
      * [get_ip 不同环境下获取真实的IP]
      * @Effect
@@ -804,14 +835,14 @@ class TerminalInfo{
         /**
          *   direct 直连   cdn 官方cnd   代理 agency
          */
-        if(\Config::TERMINAL_IP_PATTERN == 'direct'){
+        if(static::$ipPattern == 'direct'){
             if(isset($_SERVER)){
                 $realip = $_SERVER['REMOTE_ADDR'];
             }else{
                 $realip = getenv("REMOTE_ADDR");
             }
 
-        }else if(\Config::TERMINAL_IP_PATTERN == 'cdn' || \Config::TERMINAL_IP_PATTERN == 'agency'){
+        }else if(static::$ipPattern == 'cdn' || static::$ipPattern== 'agency'){
 
             //判断服务器是否允许$_SERVER
             if(isset($_SERVER)){

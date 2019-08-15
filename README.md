@@ -5,6 +5,7 @@
 + 2、通过HTTP_ACCEPT_LANGUAGE信息获取客户端类型、客户端操作系统、网络类型等信息。
 + 3、通过搜集的IP信息查询API综合分析客户端所在国家、省、城市信息。
 + 4、通过搜集的IP信息、客户端信息综合分析客户端的网络状态。
++ 5、支持自动更新纯真IP地址数据库
 # 使用方法：
 * 简单的使用方法
  ~~~
@@ -19,6 +20,7 @@
         terminalInfo::$USER_AGENT;      #非必须如果不设置此属性 默认获取当前请求的$_SERVER['HTTP_USER_AGENT']
         terminalInfo::$LANGUAGE;        #语音获取，非必须如果不设置此属性 默认获取当前请求的$_SERVER['HTTP_ACCEPT_LANGUAGE']
         terminalInfo::getInfo(true);    # 当参数为 true 时获取全文字信息方便展示  false 时获取的是int数值代替的内容方便存储数据库
+        terminalInfo::delCache([all])   # 清空 当前缓存  all 全部   ip ip缓存  agent AGENT缓存
         * 返回信息如下
         {
                 "Ipanel": {
@@ -39,6 +41,7 @@
                     "NetworkType": "WiFi",
                     "address": "CN|广东|深圳|None|CHINANET|0|0",
                     "street_number": "",
+                    "human": "no",                              # 是否是人类  no不是  yes是
                     "point": {
                         "x": "114.02597366",
                         "y": "22.54605355"
