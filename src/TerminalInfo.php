@@ -230,18 +230,16 @@ class TerminalInfo{
         }else{
             $arr['NetworkType'] = 'Ethernet';
         }
+        $arr['language'] = self::get_lang();  #获取浏览器语言
         return $arr;
     }
 
     /**
-     * @Author 皮泽培
-     * @Created 2019/8/14 15:24
-     * @param bool $simplify 是否获取全中文
-     * @title  路由标题
+     * 通过缓存获取agentInfo信息
      * @return array
      * @throws \Exception
      */
-    public static function getInfo(bool $simplify=false):array
+    public static function agentInfoCache(bool $simplify=false):array
     {
         # 判断缓存
         $agentMd5 = md5(static::$USER_AGENT?static::$USER_AGENT:$_SERVER['HTTP_USER_AGENT']);
@@ -264,14 +262,29 @@ class TerminalInfo{
                 $agentInfo = static::$agentInfo[$agentMd5];
             }
         }
-        $agentInfo['IpInfo'] = self::getIpInfo();//ip信息  有自己的缓存处理
-        $agentInfo['IP'] = static::$ip;
-        $agentInfo['language'] = self::get_lang();//获取浏览器语言
+        $agentInfo['IP'] = empty(static::$ip)?self::get_ip():static::$ip;
         if ($simplify){
             # 替换为中文
-            $agentInfo['Ipanel'] = self::getAgentInfo($agentInfo['Ipanel']);//获取浏览器内核
-            $agentInfo['OS'] =  array_search($agentInfo['OS'],self::$OsInfo);//获取操作系统
+            $agentInfo['language'] = self::get_lang();  #获取浏览器语言
+            $agentInfo['Ipanel'] = self::getAgentInfo($agentInfo['Ipanel']);    #获取浏览器内核
+            $agentInfo['OS'] =  array_search($agentInfo['OS'],self::$OsInfo);   #获取操作系统
         }
+        return $agentInfo;
+    }
+
+    /**
+     * @Author 皮泽培
+     * @Created 2019/8/14 15:24
+     * @param bool $simplify 是否获取全中文
+     * @title  获取全部客户端信息
+     * @return array
+     * @throws \Exception
+     */
+    public static function getInfo(bool $simplify=false):array
+    {
+        $agentInfo['IpInfo'] = self::getIpInfo();   #ip信息  有自己的缓存处理
+        $agentInfo = self::agentInfoCache($simplify);        # 获取客户端浏览器信息
+
         return $agentInfo;
     }
 
@@ -324,18 +337,10 @@ class TerminalInfo{
      * @return bool|string
      */
     public static function get_lang() {
-        if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])){
-            if (static::$LANGUAGE){
-                $lang = static::$LANGUAGE;
-            }else{
-                $lang = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
-            }
-        }else if (static::$LANGUAGE){
-            $lang = static::$LANGUAGE;
-        }
-        if (isset($lang)){
+        static::$LANGUAGE = isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])?$_SERVER['HTTP_ACCEPT_LANGUAGE']:null;
+        if (empty(static::$LANGUAGE)){
             # 只取前4位，这样只判断最优先的语言。如果取前5位，可能出现en,zh的情况，影响判断。
-            $lang = substr($lang, 0, 5);
+            $lang = substr(static::$LANGUAGE, 0, 5);
             if (preg_match("/zh-c/i", $lang))
                 $lang = "简体中文";
             else if (preg_match("/zh/i", $lang))
@@ -628,12 +633,13 @@ class TerminalInfo{
 
         //判断并且获取IP数据
         if(empty($value)){
-            $value = self::get_ip();
-            if(in_array($value,self::$IpInfoArr)){
-                return $value;
+            static::$ip = self::get_ip();
+            if(in_array(static::$ip,self::$IpInfoArr)){
+                return static::$ip;
             }
+        }else{
+            static::$ip = $value;
         }
-        static::$ip = $value;
         if (static::$redis !== null){
             $data = static::$redis->get('TerminalInfo:ipInfo:'.$value);
             if ($data){
