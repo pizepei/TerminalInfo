@@ -241,6 +241,7 @@ class TerminalInfo{
      */
     public static function agentInfoCache(bool $simplify=false):array
     {
+        if (!isset($_SERVER['HTTP_USER_AGENT'])){return [];}
         # 判断缓存
         $agentMd5 = md5(static::$USER_AGENT?static::$USER_AGENT:$_SERVER['HTTP_USER_AGENT']);
         if (static::$redis !==null){
