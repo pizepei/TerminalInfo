@@ -270,6 +270,7 @@ class TerminalInfo{
             $agentInfo['Ipanel'] = self::getAgentInfo($agentInfo['Ipanel']);    #获取浏览器内核
             $agentInfo['OS'] =  array_search($agentInfo['OS'],self::$OsInfo);   #获取操作系统
         }
+        $agentInfo['IpInfo'] = self::getIpInfo();   #ip信息  有自己的缓存处理
         return $agentInfo;
     }
 
@@ -641,6 +642,7 @@ class TerminalInfo{
         }else{
             static::$ip = $value;
         }
+        $value = static::$ip;
         if (static::$redis !== null){
             $data = static::$redis->get('TerminalInfo:ipInfo:'.$value);
             if ($data){
@@ -652,6 +654,7 @@ class TerminalInfo{
                 return static::$IpInfo[$value];
             }
         }
+
         /**
          * 判断是否有文件配置
          */
