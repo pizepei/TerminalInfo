@@ -270,7 +270,6 @@ class TerminalInfo{
             $agentInfo['Ipanel'] = self::getAgentInfo($agentInfo['Ipanel']);    #获取浏览器内核
             $agentInfo['OS'] =  array_search($agentInfo['OS'],self::$OsInfo);   #获取操作系统
         }
-        $agentInfo['IpInfo'] = self::getIpInfo();   #ip信息  有自己的缓存处理
         return $agentInfo;
     }
 
@@ -631,7 +630,7 @@ class TerminalInfo{
      * @param  string $value [description]
      * @return [type]        [description]
      */
-    public static function getIpInfo($value = ''){
+    public static function getIpInfo($value = '',$update=false){
 
         //判断并且获取IP数据
         if(empty($value)){
@@ -659,7 +658,7 @@ class TerminalInfo{
          * 判断是否有文件配置
          */
         if(static::$pattern =='high'){
-            $data =  static::getIpInfoHigh($value);#只使用本地纯真ip地址数据库
+            $data =  static::getIpInfoHigh($value,$update);#只使用本地纯真ip地址数据库
         }elseif (static::$pattern =='precision'){
             $data =  static::getIpInfoPrecision($value);# 使用可能的资源整合数据
         }elseif (static::$pattern =='mixture'){
@@ -676,13 +675,14 @@ class TerminalInfo{
     /**
      *  high[高性能只使用本地qqwry.dat数据]
      * @param $value
+     * @param $update
      */
-    protected static function getIpInfoHigh($value)
+    protected static function getIpInfoHigh($value,bool $update=false)
     {
         /**
          * 获取qqwry数据
          */
-        $QqIp = self::getQqIp($value);
+        $QqIp = self::getQqIp($value,$update);
         if($QqIp){
             /**
              * 判断是否是移动网络
@@ -747,11 +747,12 @@ class TerminalInfo{
     /**
      * qqwryIP 地址数据库 支持官网IP信息、支持IDC机房IP信息查询
      * @param $value
+     *  @param $update
      * @return mixed
      */
-    public static function getQqIp($value)
+    public static function getQqIp($value,bool $update=false)
     {
-        $ToLocation = new ToLocation();
+        $ToLocation = new ToLocation($update);
         $qqwry = $ToLocation->getlocation($value);
         $qqwryData = static::ipToLocation($qqwry['country']);
         $qqwryData['isp'] = $qqwry['area'];
