@@ -284,8 +284,7 @@ class TerminalInfo{
     public static function getInfo(bool $simplify=false):array
     {
         $agentInfo['IpInfo'] = self::getIpInfo();   #ip信息  有自己的缓存处理
-        $agentInfo = self::agentInfoCache($simplify);        # 获取客户端浏览器信息
-
+        $agentInfo['agentInfo'] = self::agentInfoCache($simplify);        # 获取客户端浏览器信息
         return $agentInfo;
     }
 
@@ -653,12 +652,12 @@ class TerminalInfo{
                 return static::$IpInfo[$value];
             }
         }
-
         /**
          * 判断是否有文件配置
          */
         if(static::$pattern =='high'){
             $data =  static::getIpInfoHigh($value,$update);#只使用本地纯真ip地址数据库
+
         }elseif (static::$pattern =='precision'){
             $data =  static::getIpInfoPrecision($value);# 使用可能的资源整合数据
         }elseif (static::$pattern =='mixture'){
@@ -670,6 +669,8 @@ class TerminalInfo{
         }else{
             static::$IpInfo[$value] = $data;
         }
+        $data['ip'] = $value;
+        $data['type'] = 'IPV4';
         return $data;
     }
     /**
