@@ -23,7 +23,7 @@ class UpdateQqwry{
      */
     public $updateTime = 3;
 
-    public function __construct()
+    public function __construct(bool $update=false)
     {
         if(!is_file($this->path."qqwry.dat")){
             Helper::file()->createDir($this->path);
@@ -35,13 +35,19 @@ class UpdateQqwry{
             $this->getQqwry();
             return true;
         }
-        # 默认3天86400*3 触发一次更新
-        if((@filemtime($this->path."qqwry.dat") + (86400*$this->updateTime)) < time() ){
-            $this->getQqwry();
-            return true;
-        }else{
-            return false;
+        /**
+         * 更新Qqwry文件
+         */
+        if ($update){
+            # 默认3天86400*3 触发一次更新
+            if((@filemtime($this->path."qqwry.dat") + (86400*$this->updateTime)) < time() ){
+                $this->getQqwry();
+                return true;
+            }else{
+                return false;
+            }
         }
+
     }
     /**
      * @Author 皮泽培

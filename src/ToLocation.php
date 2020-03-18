@@ -8,8 +8,6 @@
  */
 namespace pizepei\terminalInfo;
 use pizepei\terminalInfo\UpdateQqwry;
-use pizepei\terminalInfo\UpdateQqwry;
-use pizepei\terminalInfo\UpdateQqwry;
 
 class ToLocation
 {
@@ -46,12 +44,9 @@ class ToLocation
      */
     public function __construct(bool $update = false,$filename = 'qqwry.dat')
     {
-        /**
-         * 更新Qqwry文件
-         */
-        if ($update){
-            $data = new UpdateQqwry;
-        }
+
+        $data = new UpdateQqwry($update);
+
         $this->fp = 0;
         if (($this->fp = fopen($data->path.$filename, 'rb')) !== false) {
             $this->firstip = $this->getlong();
