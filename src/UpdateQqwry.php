@@ -23,14 +23,21 @@ class UpdateQqwry{
      */
     public $updateTime = 3;
 
-    public function __construct(bool $update=false)
+    /**
+     * UpdateQqwry constructor.
+     * @param bool $update
+     * @param string $path
+     * @throws \Exception
+     */
+    public function __construct(bool $update=false,$path)
     {
-        if(!is_file($this->path."qqwry.dat")){
+        $this->path = $path;
+        if(!is_file($this->path)){
             Helper::file()->createDir($this->path);
             $this->getQqwry();
             return true;
         }
-        if(!@filemtime($this->path."qqwry.dat")){
+        if(!@filemtime($this->path)){
             Helper::file()->createDir($this->path);
             $this->getQqwry();
             return true;
@@ -40,7 +47,7 @@ class UpdateQqwry{
          */
         if ($update){
             # 默认3天86400*3 触发一次更新
-            if((@filemtime($this->path."qqwry.dat") + (86400*$this->updateTime)) < time() ){
+            if((@filemtime($this->path) + (86400*$this->updateTime)) < time() ){
                 $this->getQqwry();
                 return true;
             }else{
@@ -72,7 +79,7 @@ class UpdateQqwry{
         //此函数解压缩压缩字符串。
         $qqwry = gzuncompress($qqwry);
         # 创建qqwry.dat
-        $fp = fopen($this->path."qqwry.dat", "wb");
+        $fp = fopen($this->path, "wb");
         if($fp)
         {
             # 函数写入文件（可安全用于二进制文件）。

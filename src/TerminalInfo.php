@@ -34,6 +34,11 @@ class TerminalInfo{
         ]
     ];
     /**
+     * ip地址数据库 path
+     * @var string
+     */
+    public static $path  = '..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR;
+    /**
      * 用来简单判断是否是真人ip
      */
     const ISP = [
@@ -753,7 +758,8 @@ class TerminalInfo{
      */
     public static function getQqIp($value,bool $update=false)
     {
-        $ToLocation = new ToLocation($update);
+        $ToLocation = new ToLocation($update,self::$path."qqwry.dat");
+
         $qqwry = $ToLocation->getlocation($value);
         $qqwryData = static::ipToLocation($qqwry['country']);
         $qqwryData['isp'] = $qqwry['area'];

@@ -41,14 +41,13 @@ class ToLocation
      * 构造函数，打开 QQWry.Dat 文件并初始化类中的信息
      * @param bool $update
      * @param string $filename
+     * @param static $path
      */
-    public function __construct(bool $update = false,$filename = 'qqwry.dat')
+    public function __construct(bool $update = false,$path)
     {
-
-        $data = new UpdateQqwry($update);
-
+        $data = new UpdateQqwry($update,$path);
         $this->fp = 0;
-        if (($this->fp = fopen($data->path.$filename, 'rb')) !== false) {
+        if (($this->fp = fopen($data->path, 'rb')) !== false) {
             $this->firstip = $this->getlong();
             $this->lastip = $this->getlong();
             $this->totalip = ($this->lastip - $this->firstip) / 7;
