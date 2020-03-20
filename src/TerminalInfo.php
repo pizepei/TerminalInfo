@@ -33,11 +33,12 @@ class TerminalInfo{
             'Key'=>'',
         ]
     ];
+
     /**
-     * ip地址数据库 path
-     * @var string
+     * ip地址数据库  层级
+     * @var int
      */
-    public static $path  = '..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR;
+    public static $levels = 3;
     /**
      * 用来简单判断是否是真人ip
      */
@@ -758,8 +759,7 @@ class TerminalInfo{
      */
     public static function getQqIp($value,bool $update=false)
     {
-        $ToLocation = new ToLocation($update,self::$path."qqwry.dat");
-
+        $ToLocation = new ToLocation($update,dirname($_SERVER['SCRIPT_FILENAME'],self::$levels).DIRECTORY_SEPARATOR."qqwry.dat");
         $qqwry = $ToLocation->getlocation($value);
         $qqwryData = static::ipToLocation($qqwry['country']);
         $qqwryData['isp'] = $qqwry['area'];
