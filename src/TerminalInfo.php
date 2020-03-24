@@ -18,7 +18,10 @@ class TerminalInfo{
      * direct 直连   cdn 官方cnd   代理 agency
      * @var string
      */
-    public static $ipPattern = 'direct';
+    public static $ipPattern = [
+            'pattern'=>'direct',
+            'ip'=>['all'],
+        ];
     /**
      * 第三方api接口配置
      * @var array
@@ -853,15 +856,26 @@ class TerminalInfo{
         /**
          *   direct 直连   cdn 官方cnd   代理 agency
          */
-        if(static::$ipPattern == 'direct'){
+        if(static::$ipPattern['pattern'] == 'direct'){
             if(isset($_SERVER)){
                 $realip = $_SERVER['REMOTE_ADDR'];
             }else{
                 $realip = getenv("REMOTE_ADDR");
             }
 
-        }else if(static::$ipPattern == 'cdn' || static::$ipPattern== 'agency'){
-
+        }else if(static::$ipPattern['pattern'] == 'cdn' || static::$ipPattern['pattern']== 'agency'){
+            # 判断ip的安全性
+            if (!in_array('all',static::$ipPattern['ip'])){
+                # 获取当前ip
+                if(isset($_SERVER)){
+                    $realip = $_SERVER['REMOTE_ADDR'];
+                }else{
+                    $realip = getenv("REMOTE_ADDR");
+                }
+                if (!isset(static::$ipPattern['ip'][$realip])){
+                    throw new \Exception('Illegal agency IP address '.$realip);
+                }
+            }
             //判断服务器是否允许$_SERVER
             if(isset($_SERVER)){
                 if(isset($_SERVER['HTTP_X_FORWARDED_FOR'])){
