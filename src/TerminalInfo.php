@@ -390,10 +390,10 @@ class TerminalInfo{
         {  
           $os = self::Windows_95;    
         }  
-        else if (preg_match('/win/i', $agent) && preg_match('/98/i', $agent))  
-        {  
-          $os =  self::Windows_98; 
-        }  
+//        else if (preg_match('/win/i', $agent) && preg_match('/98/i', $agent))
+//        {
+//          $os =  self::Windows_98;
+//        }
         else if (preg_match('/win/i', $agent) && preg_match('/nt 6.0/i', $agent))  
         {  
           $os = self::Windows_Vista;  
